@@ -1,4 +1,4 @@
-# VVC in Silicon — a PhD, explained
+# VVC in Silicon — my PhD, explained
 
 A small static site that explains a PhD thesis to two audiences at once: people who want the whole idea in ten
 scenes, and people who want the depth. The first instance is Ibrahim Farhat's thesis
