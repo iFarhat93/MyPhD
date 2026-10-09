@@ -1,0 +1,669 @@
+<title>The Silicon Ladder</title>
+<style>
+/* Layout: seven levels read top to bottom, a sticky level bar, one mechanism diagram per level, and a self-scoring quiz at the end. */
+:root{
+  --bg:#FFFAEB; --surface:#FFFFFF; --surface-2:#FFF0C3; --fg:#1E1E1E; --muted:#6b6557; --line:#E9E2CB; --grid:rgba(30,30,30,.06); --bar:#CFC5A7; --pixel:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --accent:#FA500F; --accent-ink:#FFFAEB;
+  --p-cpu:#2a78d6; --p-gpu:#eb6834; --p-fpga:#1baf7a; --p-asic:#eda100;
+  --good:#0ca30c; --bad:#d03b3b;
+  --display:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --body:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --mono:ui-monospace,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337; --grid:rgba(255,250,235,.05); --bar:#6b6557;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --p-cpu:#3987e5; --p-gpu:#d95926; --p-fpga:#199e70; --p-asic:#c98500; color-scheme:dark }
+}
+:root[data-theme="dark"]{ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337; --grid:rgba(255,250,235,.05); --bar:#6b6557;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --p-cpu:#3987e5; --p-gpu:#d95926; --p-fpga:#199e70; --p-asic:#c98500; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;padding-block:0 60px}
+a{color:var(--accent)}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.12;text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(1.9rem,4vw,3rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(1.4rem,2.6vw,2rem);font-weight:800}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1080px;margin-inline:auto;padding-inline:clamp(16px,3vw,32px);min-width:0}
+.eyebrow{font-family:var(--pixel);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+.btn{border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1.2}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* platform chips: the name is always printed next to the colour */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;padding:2px 8px;border-radius:0;border:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.chip i{width:10px;height:10px;border-radius:0;display:inline-block}
+.chip.cpu i{background:var(--p-cpu)} .chip.gpu i{background:var(--p-gpu)} .chip.fpga i{background:var(--p-fpga)} .chip.asic i{background:var(--p-asic)}
+
+/* masthead */
+.masthead{background:var(--surface);border-bottom:1px solid var(--line);padding-block:30px 26px}
+.masthead .lede{max-width:68ch;font-size:1.06rem;margin-top:12px}
+.masthead .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.masthead figure{margin:24px 0 0}
+.masthead svg{width:100%;height:auto;display:block}
+.masthead figcaption{font-size:.86rem;color:var(--muted);margin-top:6px}
+
+/* level bar */
+.rungs{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--surface);border-bottom:1px solid var(--line)}
+.rungs .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+.rungs a{flex:0 0 auto;font-family:var(--mono);font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--muted);padding:6px 10px;border-radius:0;border:1px solid transparent}
+.rungs a.active{color:var(--fg);background:var(--surface-2);border-color:var(--line)}
+.rungs a:hover{color:var(--fg)}
+
+/* levels */
+.level{padding-block:40px 30px;border-bottom:1px solid var(--line)}
+.lhead{display:grid;gap:8px;max-width:72ch}
+.lhead .rung{font-family:var(--mono);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lhead .sub{color:var(--muted);font-size:1.05rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-top:22px}
+.grid2 > div{min-width:0}
+.grid2 h3{margin-bottom:8px}
+.grid2 p, .grid2 li{max-width:62ch}
+.decision{margin-top:12px;border-left:3px solid var(--accent);padding:8px 14px;background:var(--surface);border-radius:0}
+.decision b{font-family:var(--display)}
+.events{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.events li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;font-size:.95rem}
+.events b{font-family:var(--mono);font-weight:500;color:var(--muted)}
+ul.plain{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.96rem}
+.pro h3::before{content:"";display:inline-block;width:10px;height:10px;background:var(--good);border-radius:50%;margin-right:8px}
+.con h3::before{content:"";display:inline-block;width:10px;height:10px;background:var(--bad);border-radius:50%;margin-right:8px}
+.callout{margin-top:22px;border:1px solid var(--line);border-radius:0;background:var(--surface);padding:14px 16px;display:grid;gap:6px}
+.callout .k{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.callout p{max-width:78ch}
+.remember{margin-top:18px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.remember .k{font-family:var(--display);font-weight:700;padding-top:2px}
+.remember ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.diagram{margin:22px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:0;padding:12px;min-width:0}
+.diagram svg{width:100%;height:auto;max-width:100%;display:block}
+.diagram figcaption{font-size:.86rem;color:var(--muted);margin-top:8px;line-height:1.4;max-width:90ch}
+.diagram svg text{font-family:var(--body);font-size:12px;fill:currentColor}
+.diagram svg .small{font-size:11px;fill:var(--muted)}
+.diagram svg .b{font-weight:600}
+.diagram svg .box{fill:var(--surface);stroke:currentColor;stroke-width:1.2}
+.diagram svg .box.soft{fill:var(--surface-2)}
+.diagram svg .box.cpu{stroke:var(--p-cpu);stroke-width:2} .diagram svg .box.gpu{stroke:var(--p-gpu);stroke-width:2} .diagram svg .box.fpga{stroke:var(--p-fpga);stroke-width:2} .diagram svg .box.asic{stroke:var(--p-asic);stroke-width:2}
+.diagram svg .fill-cpu{fill:var(--p-cpu)} .diagram svg .fill-gpu{fill:var(--p-gpu)} .diagram svg .fill-fpga{fill:var(--p-fpga)} .diagram svg .fill-asic{fill:var(--p-asic)}
+.diagram svg .tint-gpu{fill:color-mix(in oklab,var(--p-gpu) 16%,var(--surface))} .diagram svg .tint-fpga{fill:color-mix(in oklab,var(--p-fpga) 16%,var(--surface))}
+.diagram svg .arrow{stroke:currentColor;stroke-width:1.3;fill:none}
+.diagram svg .fat{stroke:currentColor;stroke-width:4;fill:none;opacity:.55}
+.diagram svg .dash{stroke:var(--muted);stroke-dasharray:5 4;fill:none}
+.diagram svg .grid{stroke:var(--line);stroke-width:1}
+.diagram svg .lane{stroke:var(--line);stroke-width:1}
+.diagram svg .lbl{font-family:var(--body);font-size:12.5px;fill:var(--fg)}
+.diagram svg .val{font-family:var(--mono);font-size:12px;fill:var(--fg)}
+.diagram svg .bar{fill:var(--bar);stroke:none}
+.diagram svg .bar.emph{fill:var(--accent);stroke:none}
+.diagram svg .axis{stroke:var(--line)}
+.diagram svg .line-fpga{stroke:var(--p-fpga);stroke-width:2.5;fill:none} .diagram svg .line-asic{stroke:var(--p-asic);stroke-width:2.5;fill:none}
+.diagram svg .ring{fill:none;stroke:var(--surface);stroke-width:2}
+.scroll{overflow-x:auto}
+@media (max-width:700px){ .scroll svg{min-width:640px} }
+
+/* table */
+.table-wrap{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.rules{display:grid;gap:8px;margin-top:18px}
+.rule{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:0;background:var(--surface)}
+.rule .q{font-size:.97rem}
+
+/* quiz */
+.quiz{padding-block:40px 20px}
+.qcard{margin-top:18px;border:1px solid var(--line);border-radius:0;background:var(--surface);padding:18px clamp(14px,3vw,24px)}
+.qtop{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.qbar{height:6px;background:var(--surface-2);border-radius:0;margin-top:10px;overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.qtext{font-family:var(--display);font-size:1.25rem;font-weight:700;margin-top:16px;text-wrap:balance}
+.opts{display:grid;gap:8px;margin-top:16px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:0;padding:10px 12px;cursor:pointer;display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start}
+.opt:hover{border-color:var(--muted)}
+.opt .k{font-family:var(--mono);color:var(--muted);padding-top:2px}
+.opt.right{border-color:var(--good);background:color-mix(in oklab,var(--good) 12%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in oklab,var(--bad) 12%,var(--surface))}
+.opt:disabled{cursor:default}
+.feedback{margin-top:14px;padding:12px 14px;border-radius:0;background:var(--surface-2);font-size:.96rem}
+.feedback b{font-family:var(--display)}
+.qnav{display:flex;justify-content:space-between;gap:10px;margin-top:16px;flex-wrap:wrap}
+.score{font-family:var(--display);font-size:clamp(2rem,6vw,3.2rem);font-weight:800;line-height:1}
+.breakdown{display:grid;gap:8px;margin-top:16px}
+.brow{display:grid;grid-template-columns:150px minmax(0,1fr) 60px;gap:10px;align-items:center;font-size:.92rem}
+.brow .track{height:10px;background:var(--surface-2);border-radius:0;overflow:hidden}
+.brow .track i{display:block;height:100%;background:var(--accent)}
+.brow .n{font-family:var(--mono);text-align:right}
+.brow a{font-size:.85rem}
+.sources{padding-block:30px;font-size:.9rem;color:var(--muted)}
+.sources ul{columns:2;column-gap:28px;margin:8px 0 0;padding-left:18px}
+.sources li{break-inside:avoid;margin-bottom:5px}
+@media (max-width:640px){ .sources ul{columns:1} .brow{grid-template-columns:110px minmax(0,1fr) 50px} }
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important;transition:none!important} }
+</style>
+<!-- body -->
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow"><a href="index.html" style="color:inherit;text-decoration:none">← The story in 10 scenes</a> · Foundations for the thesis explainer</div>
+    <h1 style="margin-top:8px">The Silicon Ladder</h1>
+    <p class="lede">CPU, GPU, FPGA and ASIC are four ways to implement a computation. They differ in how much of the computation is fixed when the chip is designed and how much is controlled by a program at run time. This page presents each platform in turn: the problem it was created to solve, how it works, where it is efficient, and how the four are combined in one system. A quiz at the end checks your understanding.</p>
+    <div class="meta">
+      <span class="chip cpu"><i></i>CPU</span><span class="chip gpu"><i></i>GPU</span><span class="chip fpga"><i></i>FPGA</span><span class="chip asic"><i></i>ASIC</span>
+      <span class="eyebrow" style="margin-left:6px">7 levels · 20-question quiz · about 35 minutes</span>
+    </div>
+    <figure class="diagram scroll" style="border:0;padding:0;background:transparent">
+      <svg viewBox="0 0 900 230" role="img" aria-label="A scale from general-purpose to application-specific hardware: CPU executes any program; GPU executes one instruction on many data elements; FPGA is a reconfigurable circuit; ASIC is a fixed circuit.">
+        <defs><marker id="ah0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <line class="arrow" x1="60" y1="150" x2="860" y2="150" marker-end="url(#ah0)" marker-start="url(#ah0)"/>
+        <text x="60" y="178" class="small">general purpose: the sequence of operations is set by a program</text>
+        <text x="860" y="178" text-anchor="end" class="small">application specific: the sequence of operations is fixed in the circuit</text>
+        <text x="60" y="200" class="small">highest flexibility · highest energy per result</text>
+        <text x="860" y="200" text-anchor="end" class="small">no flexibility · lowest energy per result</text>
+        <circle class="fill-cpu" cx="170" cy="150" r="20"/><text x="170" y="98" text-anchor="middle" class="b">CPU</text><text x="170" y="116" text-anchor="middle" class="small">executes any program</text><text x="170" y="131" text-anchor="middle" class="small">one instruction stream per core</text>
+        <circle class="fill-gpu" cx="390" cy="150" r="20"/><text x="390" y="98" text-anchor="middle" class="b">GPU</text><text x="390" y="116" text-anchor="middle" class="small">one instruction on thousands of data elements</text><text x="390" y="131" text-anchor="middle" class="small">still controlled by a program</text>
+        <circle class="fill-fpga" cx="610" cy="150" r="20"/><text x="610" y="98" text-anchor="middle" class="b">FPGA</text><text x="610" y="116" text-anchor="middle" class="small">a circuit that can be reconfigured</text><text x="610" y="131" text-anchor="middle" class="small">no instructions</text>
+        <circle class="fill-asic" cx="800" cy="150" r="20"/><text x="800" y="98" text-anchor="middle" class="b">ASIC</text><text x="800" y="116" text-anchor="middle" class="small">a circuit fixed at manufacture</text><text x="800" y="131" text-anchor="middle" class="small">lowest energy per result</text>
+        <text x="280" y="40" text-anchor="middle" class="small">decided by the program at run time ──────▶</text>
+        <text x="700" y="40" text-anchor="middle" class="small">◀────── fixed in the circuit at design time</text>
+      </svg>
+      <figcaption>From left to right, more of the computation is fixed in hardware and less is controlled by a program. Flexibility decreases; energy efficiency increases.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<nav class="rungs" aria-label="Levels"><div class="wrap">
+  <a href="#l0">0 · Principle</a><a href="#l1">1 · CPU</a><a href="#l2">2 · GPU</a><a href="#l3">3 · FPGA</a><a href="#l4">4 · ASIC</a><a href="#l5">5 · Combined</a><a href="#l6">6 · Choosing</a><a href="#quiz">Quiz</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- ===================== LEVEL 0 ===================== -->
+<section class="level" id="l0" data-level="0">
+  <div class="lhead"><span class="rung">Level 0</span><h2>One principle: the cost of generality</h2><p class="sub">A computer performs arithmetic, moves data, and controls the order of operations. The four platforms differ in how much of that control is performed by a program at run time and how much is fixed in the circuit.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>The principle</h3>
+      <p>In a general-purpose processor, every operation is described by an instruction. The instruction must be fetched from memory, decoded and scheduled, and its operands must be moved between memory, caches and registers. This control and data movement consume far more energy than the arithmetic itself.</p>
+      <p style="margin-top:10px">In an application-specific circuit, the sequence of operations is fixed in the wiring. No instructions are fetched, and data moves directly from one arithmetic unit to the next. The four platforms form a scale between these two extremes. A GPU is a processor that executes one instruction on many data elements at once, which divides the instruction overhead among them. An FPGA is a reconfigurable circuit: it has no instructions, but its generic logic blocks and wiring are larger and slower than custom ones. An ASIC is the custom circuit itself.</p>
+      <div class="decision"><b>Three sources of speed.</b> A computation can be accelerated by a higher clock frequency, by executing more operations in parallel, or by removing work that does not contribute to the result. Clock frequency stopped increasing around 2004 because of power dissipation. Parallelism requires work that can be divided. Specialisation removes the overhead of generality, but requires the computation to be known at design time. The scale from CPU to ASIC is a progression along this third option.</div>
+    </div>
+    <div><h3>Where the energy goes in a processor</h3>
+      <p>Arithmetic is a small part of the energy budget. A 32-bit addition costs about 0.1 pJ. Fetching the operands from DRAM costs about 640 pJ, several thousand times more. The control overhead of a complete instruction (fetch, decode, register access) is of the order of tens of picojoules.</p>
+      <p style="margin-top:10px">Hameed et al. (2010) measured the consequence for video coding. An H.264 encoder running on a general-purpose processor consumed about <b>500 times the energy</b> of an ASIC implementing the same encoder. SIMD and VLIW extensions reduced the gap by about a factor of 10. The remaining factor of 50 required custom datapaths that pass data between units without instructions or memory accesses. Video coding is therefore a representative case for this scale, and it is the reason the thesis works at its application-specific end.</p>
+    </div>
+  </div>
+  <figure class="diagram"><div id="energyChart"></div><figcaption>Energy per operation in picojoules at 45 nm, logarithmic scale (Horowitz, ISSCC 2014). The whole-instruction overhead is an order-of-magnitude estimate from the same literature. Memory accesses and instruction overhead exceed the arithmetic by two to four orders of magnitude; a specialised circuit removes the instruction and most of the memory traffic.</figcaption></figure>
+  <div class="remember"><span class="k">Summary</span><ol><li>Arithmetic is cheap; instructions and data movement are expensive.</li><li>Each step from CPU to ASIC removes run-time control and gains efficiency at the cost of flexibility.</li><li>For a video encoder the measured energy gap between a processor and an ASIC is about 500 times.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 1 ===================== -->
+<section class="level" id="l1" data-level="1">
+  <div class="lhead"><span class="rung">Level 1 · <span class="chip cpu"><i></i>CPU</span></span><h2>The CPU: a stored program, one instruction at a time</h2><p class="sub">A central processing unit executes one sequence of instructions per core. Because the program is stored in memory as data, the same processor can execute any program.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>How it works</h3>
+      <p>A core repeats one cycle: fetch the next instruction from memory, decode it, execute it, write the result. Several mechanisms make this cycle fast. A pipeline overlaps the stages of consecutive instructions. Caches keep recently used data close to the core, because main memory is slow. A branch predictor guesses the outcome of conditional jumps so that fetching does not stall. Out-of-order execution runs independent instructions ahead of a stalled one. SIMD units apply one instruction to 4 to 16 values at once.</p>
+      <p style="margin-top:10px">All of these mechanisms serve a single instruction stream and reduce its latency. For workloads that apply the same operation to millions of elements, they add cost without adding throughput.</p>
+      <div class="decision"><b>The founding decision (1945): the stored program.</b> The ENIAC was programmed by rewiring, which took days. John von Neumann's report on the EDVAC proposed holding the program in the same memory as the data, so that a new task required a new program rather than a new machine. This is the origin of general-purpose computing, and of the instruction overhead described in Level 0.</div>
+    </div>
+    <div class="hist"><h3>History</h3>
+      <ol class="events">
+        <li><b>1945</b>Stored-program architecture (von Neumann): fetch, decode and execute instructions held in memory.</li>
+        <li><b>1971</b>Intel 4004: the first microprocessor, a complete CPU on one chip, 2,300 transistors, designed for a calculator.</li>
+        <li><b>1980s–90s</b>Pipelining; caches, because DRAM speed fell behind processor speed; superscalar execution (Pentium, 1993); out-of-order execution (Pentium Pro, 1995); SIMD extensions (MMX 1997, SSE, AVX).</li>
+        <li><b>2004</b>The power limit: Intel cancels a 4 GHz Pentium 4. Smaller transistors no longer reduced power per transistor proportionally (the end of Dennard scaling, 1974–2004). Clock frequencies have stayed near 3–5 GHz since.</li>
+        <li><b>2006</b>Multicore processors become standard: more cores rather than faster cores. Parallel programming becomes necessary for performance.</li>
+        <li><b>2010s</b>The CPU integrates specialised blocks: AES encryption (2010), the Quick Sync video codec (2011), graphics units, AI units. A CPU package is now a small system on chip.</li>
+      </ol>
+    </div>
+  </div>
+  <figure class="diagram scroll"><svg viewBox="0 0 760 250" role="img" aria-label="A CPU core: fetch, decode, execute, memory and write-back stages, served by level-1, level-2 and level-3 caches and DRAM.">
+    <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <rect class="box cpu" x="20" y="30" width="720" height="110" rx="6"/><text x="34" y="52" class="small">ONE CORE · one instruction stream · 3–5 GHz · a few instructions per cycle</text>
+    <rect class="box soft" x="40" y="70" width="110" height="50" rx="4"/><text x="95" y="99" text-anchor="middle">Fetch</text>
+    <line class="arrow" x1="150" y1="95" x2="178" y2="95" marker-end="url(#ah1)"/>
+    <rect class="box soft" x="180" y="70" width="110" height="50" rx="4"/><text x="235" y="99" text-anchor="middle">Decode</text>
+    <line class="arrow" x1="290" y1="95" x2="318" y2="95" marker-end="url(#ah1)"/>
+    <rect class="box soft" x="320" y="70" width="140" height="50" rx="4"/><text x="390" y="91" text-anchor="middle">Execute</text><text x="390" y="108" text-anchor="middle" class="small">ALUs · FPU · SIMD</text>
+    <line class="arrow" x1="460" y1="95" x2="488" y2="95" marker-end="url(#ah1)"/>
+    <rect class="box soft" x="490" y="70" width="110" height="50" rx="4"/><text x="545" y="99" text-anchor="middle">Memory</text>
+    <line class="arrow" x1="600" y1="95" x2="628" y2="95" marker-end="url(#ah1)"/>
+    <rect class="box soft" x="630" y="70" width="95" height="50" rx="4"/><text x="677" y="99" text-anchor="middle">Write back</text>
+    <path class="dash" d="M235,120 v18 h-140 v-16" marker-end="url(#ah1)"/><text x="40" y="156" class="small">branch predictor: chooses the next instruction to fetch before the jump is resolved</text>
+    <rect class="box" x="470" y="170" width="150" height="34" rx="4"/><text x="545" y="192" text-anchor="middle" class="small">L1 cache · ~1 ns</text>
+    <rect class="box" x="340" y="170" width="110" height="34" rx="4"/><text x="395" y="192" text-anchor="middle" class="small">L2 · ~4 ns</text>
+    <rect class="box" x="210" y="170" width="110" height="34" rx="4"/><text x="265" y="192" text-anchor="middle" class="small">L3 · ~10 ns</text>
+    <rect class="box" x="40" y="170" width="150" height="34" rx="4"/><text x="115" y="192" text-anchor="middle" class="small">DRAM · ~80 ns · 640 pJ</text>
+    <line class="arrow" x1="545" y1="120" x2="545" y2="168" marker-end="url(#ah1)" marker-start="url(#ah1)"/>
+    <line class="arrow" x1="470" y1="187" x2="452" y2="187" marker-end="url(#ah1)"/><line class="arrow" x1="340" y1="187" x2="322" y2="187" marker-end="url(#ah1)"/><line class="arrow" x1="210" y1="187" x2="192" y2="187" marker-end="url(#ah1)"/>
+    <text x="40" y="232" class="small">Each cache level is larger and slower than the previous one. Without caches the core would wait about 300 cycles for every DRAM access. Most of the die area is cache and control logic, not arithmetic.</text>
+  </svg><figcaption>A CPU core and its memory hierarchy. Latencies are typical values for a desktop processor.</figcaption></figure>
+  <div class="grid2">
+    <div class="pro"><h3>Strengths</h3><ul class="plain"><li>General computation: operating systems, compilers, databases, protocols, control logic.</li><li>Irregular code in which each step depends on the result of the previous one.</li><li>Low latency for a single task; mature languages, debuggers and libraries.</li><li>The host role: a CPU controls every other platform in a system.</li></ul></div>
+    <div class="con"><h3>Limitations</h3><ul class="plain"><li>Low throughput per watt on regular, data-parallel work such as pixels or matrices.</li><li>At most tens of cores; memory bandwidth of about 50–100 GB/s.</li><li>Most energy goes to instruction overhead and data movement rather than arithmetic.</li><li>Execution time varies with cache and predictor state, so it is not deterministic.</li></ul></div>
+  </div>
+  <div class="callout"><span class="k">In video coding and in the thesis</span><p>Software encoders (x264, x265) and decoders (VTM, OpenVVC) run on CPUs. They are appropriate for files encoded offline and for research. For live video with a fixed frame rate, the thesis notes that a CPU cannot reach a standard's best quality in real time. CPUs still run the control software of the partner's encoder, including the logic that selects which four ALF filter sets the hardware decision engine evaluates for each picture.</p></div>
+  <div class="remember"><span class="k">Summary</span><ol><li>The program is stored as data; this is what makes a CPU general purpose.</li><li>Pipelines, caches and predictors serve one instruction stream; they are overhead for bulk data processing.</li><li>The 2004 power limit shifted the industry toward multiple cores and specialised accelerators.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 2 ===================== -->
+<section class="level" id="l2" data-level="2">
+  <div class="lhead"><span class="rung">Level 2 · <span class="chip gpu"><i></i>GPU</span></span><h2>The GPU: one instruction, thousands of data elements</h2><p class="sub">A graphics processing unit executes the same instruction on many data elements at once. It accepts a higher latency per task in exchange for a much higher throughput.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>How it works</h3>
+      <p>Rendering a 3D scene applies the same short program to millions of vertices and pixels, which are independent of each other. A GPU organises threads in groups of 32 that execute one instruction in lockstep on 32 data elements (NVIDIA's term is SIMT). Thousands of such groups are kept resident. When one group waits for memory, the scheduler issues another. Latency is hidden by the number of threads rather than by large caches or prediction, and the memory bandwidth is 10 to 30 times that of a CPU.</p>
+      <p style="margin-top:10px">The limitation is divergence. If the threads of a group take different branches, both branches are executed in turn and the inactive threads idle. Regular computations run at full efficiency; irregular ones do not.</p>
+      <div class="decision"><b>Two decisions (1999–2007): throughput over latency, then programmability.</b> The GeForce 256 (1999) moved the geometry stage into hardware. Programmable shaders (2001) made the per-pixel computation a program. Unified shader cores and CUDA (2006–2007) allowed that program to be arbitrary. The last step made the GPU the main platform for scientific computing and, after 2012, for deep learning.</div>
+    </div>
+    <div class="hist"><h3>History</h3>
+      <ol class="events">
+        <li><b>1996</b>3dfx Voodoo: a fixed-function 3D accelerator for PC games; geometry was still computed on the CPU.</li>
+        <li><b>1999</b>NVIDIA GeForce 256, marketed as the first "GPU": transform and lighting computed in hardware.</li>
+        <li><b>2001</b>GeForce 3: programmable vertex and pixel shaders.</li>
+        <li><b>2006–07</b>Unified shader cores (G80) and CUDA: general-purpose computing on GPUs.</li>
+        <li><b>2012</b>AlexNet, trained on two consumer GPUs, wins the ImageNet competition. GPUs become the standard platform for neural networks.</li>
+        <li><b>2012–17</b>The GPU integrates specialised blocks of its own: NVENC/NVDEC video codec engines (2012), tensor cores for matrix arithmetic (2017), ray-tracing units.</li>
+      </ol>
+    </div>
+  </div>
+  <figure class="diagram scroll"><svg viewBox="0 0 760 290" role="img" aria-label="A GPU streaming multiprocessor: a warp scheduler issues one instruction to 32 lanes in lockstep; a large register file and a small shared memory; many multiprocessors share high-bandwidth memory; the card is connected to the CPU host over PCIe.">
+    <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <rect class="box gpu" x="20" y="20" width="440" height="220" rx="6"/><text x="34" y="42" class="small">ONE STREAMING MULTIPROCESSOR · 80–130 per die · 1.5–2.5 GHz</text>
+    <rect class="box soft" x="40" y="56" width="400" height="26" rx="3"/><text x="240" y="74" text-anchor="middle" class="small">warp scheduler: each cycle, issues one instruction for a ready group of 32 threads</text>
+    <g id="aluGrid"></g>
+    <text x="40" y="178" class="small">32 lanes execute the same instruction on 32 data elements</text>
+    <rect class="box soft" x="40" y="188" width="195" height="26" rx="3"/><text x="137" y="206" text-anchor="middle" class="small">register file: large (thousands of threads)</text>
+    <rect class="box soft" x="245" y="188" width="195" height="26" rx="3"/><text x="342" y="206" text-anchor="middle" class="small">shared memory / L1 cache: small</text>
+    <text x="40" y="232" class="small">latency is hidden by switching between thread groups, not by prediction or large caches</text>
+    <rect class="box" x="520" y="60" width="220" height="70" rx="6"/><text x="630" y="86" text-anchor="middle" class="b">GDDR6 / HBM memory</text><text x="630" y="106" text-anchor="middle" class="small">8–80 GB · 0.5–3+ TB/s</text>
+    <line class="fat" x1="460" y1="95" x2="518" y2="95"/><line class="arrow" x1="460" y1="95" x2="518" y2="95" marker-end="url(#ah2)" marker-start="url(#ah2)"/>
+    <rect class="box cpu" x="520" y="170" width="220" height="70" rx="6"/><text x="630" y="196" text-anchor="middle" class="b">CPU host</text><text x="630" y="216" text-anchor="middle" class="small">launches kernels, copies data</text>
+    <line class="arrow" x1="460" y1="205" x2="518" y2="205" marker-end="url(#ah2)" marker-start="url(#ah2)"/><text x="489" y="258" text-anchor="middle" class="small">PCIe: 16–64 GB/s</text>
+    <text x="630" y="152" text-anchor="middle" class="small">local memory bandwidth</text>
+    <text x="20" y="278" class="small">A GPU requires a CPU host. The CPU prepares the work, and all data crosses the PCIe bus before and after processing.</text>
+  </svg><figcaption>Inside a GPU. The PCIe link to the CPU is much narrower than the GPU's local memory, so small or latency-critical tasks do not benefit from a GPU: the transfer costs more than the computation.</figcaption></figure>
+  <div class="grid2">
+    <div class="pro"><h3>Strengths</h3><ul class="plain"><li>Data-parallel work: graphics, matrix multiplication, neural networks, physics simulation, image filtering.</li><li>Throughput of tens of teraflops; memory bandwidth of terabytes per second.</li><li>Programmable: new algorithms are deployed as software (CUDA, OpenCL, shaders).</li></ul></div>
+    <div class="con"><h3>Limitations</h3><ul class="plain"><li>Divergent branches and irregular memory access leave most lanes idle.</li><li>Small or latency-critical tasks are dominated by the PCIe transfer and kernel launch time.</li><li>Power consumption of 150–700 W per card excludes fanless or battery-powered devices.</li><li>Sequential stages such as CABAC entropy coding offer no parallelism.</li></ul></div>
+  </div>
+  <div class="callout"><span class="k">In video coding</span><p>Shader programs are suitable for scaling, colour conversion and filtering. The encoders and decoders inside GPUs (NVENC/NVDEC, AMD VCN, Intel Quick Sync) are not shader programs: they are fixed-function blocks, small ASIC designs placed on the GPU or CPU die. Encoding "on the GPU" therefore uses an application-specific circuit hosted on a programmable one. The thesis designs blocks of the same kind, for a chip whose entire purpose is the codec.</p></div>
+  <div class="remember"><span class="k">Summary</span><ol><li>Groups of threads execute in lockstep; efficiency is highest when every thread does the same work.</li><li>Latency is hidden by thread count and memory bandwidth, not by caches.</li><li>GPU video encoding is performed by ASIC-style blocks inside the GPU.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 3 ===================== -->
+<section class="level" id="l3" data-level="3">
+  <div class="lhead"><span class="rung">Level 3 · <span class="chip fpga"><i></i>FPGA</span></span><h2>The FPGA: a circuit that can be reconfigured</h2><p class="sub">A field-programmable gate array does not execute instructions. The designer describes a circuit; tools map it onto a grid of configurable logic blocks and programmable wires; at power-up the chip is configured as that circuit.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>How it works</h3>
+      <p>The fabric consists of look-up tables, flip-flops and a mesh of wires with programmable switches. A 6-input look-up table stores a 64-entry truth table and therefore implements any Boolean function of 6 inputs. A bitstream sets every table and every switch. After configuration, data flows through logic and registers on each clock edge, as in an ASIC, and all parts of the circuit operate concurrently.</p>
+      <p style="margin-top:10px">The generic blocks and switches are larger and slower than custom logic. FPGAs therefore include fixed hard blocks: block RAM, DSP slices for multiply-accumulate operations, high-speed transceivers and, in some families, ARM processor cores. The thesis mapped its first transform design onto an Intel Arria 10 FPGA for comparison with earlier FPGA designs: the regular-multiplier version used 9,723 adaptive logic modules and 32 DSP blocks.</p>
+      <div class="decision"><b>The founding decision (1985): reconfigurability at the cost of area.</b> Ross Freeman, co-founder of Xilinx, reasoned that transistor cost was falling quickly enough (Moore's law) to make programmable logic affordable. Designers would obtain custom hardware without the cost and delay of a custom chip, and could correct it after shipping. The XC2064 had 64 configurable logic blocks; current devices have millions.</div>
+    </div>
+    <div class="hist"><h3>History</h3>
+      <ol class="events">
+        <li><b>1978</b>PAL devices (MMI): small programmable logic that replaced the discrete chips connecting larger ones.</li>
+        <li><b>1983–85</b>Altera founded (1983); Xilinx founded (1984) and ships the XC2064 (1985), the first FPGA.</li>
+        <li><b>1990s</b>FPGAs gain on-chip RAM, multipliers and then DSP slices. Used for ASIC prototyping, telecommunications, test equipment and aerospace.</li>
+        <li><b>2011</b>Zynq: ARM processor cores and FPGA fabric on one chip.</li>
+        <li><b>2014</b>Microsoft Catapult: FPGAs deployed in Bing and later Azure servers for search and networking.</li>
+        <li><b>2015 · 2022</b>Intel acquires Altera; AMD acquires Xilinx.</li>
+      </ol>
+    </div>
+  </div>
+  <figure class="diagram scroll"><svg viewBox="0 0 760 320" role="img" aria-label="FPGA fabric: a grid of configurable logic blocks, each a look-up table and a flip-flop, connected by programmable routing, with columns of block RAM and DSP slices and input-output blocks at the edge; configured by a bitstream at power-up.">
+    <g id="fpgaGrid"></g>
+  </svg><figcaption>FPGA fabric. The design flow is synthesis, then placement and routing onto this grid, then generation of a bitstream. It takes minutes to hours. The resulting circuit typically runs at 100–500 MHz with cycle-exact timing.</figcaption></figure>
+  <div class="grid2">
+    <div class="pro"><h3>Strengths</h3><ul class="plain"><li>Custom hardware in small and medium volumes, with no mask cost.</li><li>Deterministic latency to the clock cycle: networking, trading systems, control loops, broadcast video.</li><li>Protocols and standards that are still changing; updates after shipping.</li><li>Prototyping and emulation of a future ASIC before committing to manufacture.</li></ul></div>
+    <div class="con"><h3>Limitations</h3><ul class="plain"><li>Compared with an ASIC of the same logic: about 35 times the area, 3–4 times slower and about 14 times the dynamic power for logic-only designs; the area ratio falls to about 18 when the hard DSP and RAM blocks are used (Kuon and Rose, 2007).</li><li>Unit price from tens to thousands of dollars; too expensive per unit at high volume.</li><li>Requires hardware design skills (VHDL/Verilog); long build times; difficult debugging.</li></ul></div>
+  </div>
+  <div class="callout"><span class="k">In video coding and at the industrial partner</span><p>The partner's HEVC generation was FPGA-based: a fanless portable encoder built around an FPGA codec. The platform matched the situation: professional volumes in the thousands, an HEVC feature set that was still evolving, and customers who require updates in the field. The thesis corresponds to the next step: when the standard is final and the function fixed, the same kind of design moves to an ASIC, and the design task becomes minimising area, memory and power.</p></div>
+  <div class="remember"><span class="k">Summary</span><ol><li>An FPGA implements a circuit; nothing is fetched or decoded at run time.</li><li>It is roughly an order of magnitude larger and more power-hungry than an ASIC, in exchange for no mask cost and reconfigurability.</li><li>It is the usual step before an ASIC, and the platform for products that must still change.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 4 ===================== -->
+<section class="level" id="l4" data-level="4">
+  <div class="lhead"><span class="rung">Level 4 · <span class="chip asic"><i></i>ASIC</span></span><h2>The ASIC: a circuit fixed at manufacture</h2><p class="sub">An application-specific integrated circuit is designed for one application and manufactured with its own photomasks. It is the most efficient platform and the only one that cannot be modified after manufacture.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>How it works</h3>
+      <p>An ASIC contains only the logic the application needs. Each gate is the smallest transistor arrangement for its function, and each wire is a direct metal connection. Compared with the same circuit on an FPGA, it is 5 to 50 times smaller and runs faster at a lower voltage. Memory, pipeline and clock distribution are designed for this circuit alone. This is why a codec block that decodes 4K video at 60 frames per second can consume about ten milliwatts, as the thesis's ALF block does.</p>
+      <p style="margin-top:10px">The constraint is the development process. From register-transfer-level code to a chip takes one to two years and costs millions in non-recurring engineering: design, verification, licensed IP and masks. An error found after tape-out requires a new set of masks. The function must therefore be final before the design starts. This is why the thesis states in its first sentence that the standard was finalized in July 2020.</p>
+      <div class="decision"><b>The enabling decisions (1980s): structured design and the foundry model.</b> Gate arrays and standard-cell libraries let designers assemble chips from pre-characterised cells rather than individual transistors (the ULA in the 1982 ZX Spectrum; LSI Logic, 1981). In 1987 TSMC opened as a manufacturer that fabricates only other companies' designs, so that companies without a fab could produce custom silicon. Together, these made the ASIC accessible to a company of the partner's size.</div>
+    </div>
+    <div class="hist"><h3>History</h3>
+      <ol class="events">
+        <li><b>1980–82</b>Structured VLSI design (Mead and Conway); gate-array ASICs in consumer products (the ZX Spectrum's ULA).</li>
+        <li><b>1987</b>TSMC founded: companies without factories (NVIDIA, Qualcomm, later Apple's chip division) can produce custom chips.</li>
+        <li><b>1990s</b>Systems on chip: complete products on one die; standard-cell flows with synthesis and place-and-route tools.</li>
+        <li><b>2010</b>Apple A4: a phone manufacturer designs its own SoC.</li>
+        <li><b>2013</b>Bitcoin ASICs: within a year, CPUs, GPUs and FPGAs become uneconomic for mining.</li>
+        <li><b>2016</b>Google's TPU: an ASIC for neural networks in the datacenter. Domain-specific architectures become the industry's response to the end of Moore's law (Hennessy and Patterson, 2018).</li>
+        <li><b>2019–22</b>The industrial partner designs its VVC codec silicon; the thesis delivers its transform and ALF blocks.</li>
+      </ol>
+    </div>
+  </div>
+  <figure class="diagram scroll"><svg viewBox="0 0 760 230" role="img" aria-label="The ASIC flow: RTL, synthesis to a standard-cell library, place and route, sign-off, tape-out, fabrication and test; non-recurring engineering is paid once, then each unit is inexpensive.">
+    <defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <g class="flow">
+      <rect class="box asic" x="20" y="40" width="100" height="56" rx="5"/><text x="70" y="64" text-anchor="middle" class="b">RTL</text><text x="70" y="82" text-anchor="middle" class="small">VHDL / Verilog</text>
+      <line class="arrow" x1="120" y1="68" x2="138" y2="68" marker-end="url(#ah4)"/>
+      <rect class="box" x="140" y="40" width="110" height="56" rx="5"/><text x="195" y="64" text-anchor="middle" class="b">Synthesis</text><text x="195" y="82" text-anchor="middle" class="small">to standard cells</text>
+      <line class="arrow" x1="250" y1="68" x2="268" y2="68" marker-end="url(#ah4)"/>
+      <rect class="box" x="270" y="40" width="120" height="56" rx="5"/><text x="330" y="64" text-anchor="middle" class="b">Place and route</text><text x="330" y="82" text-anchor="middle" class="small">floorplan, clock tree</text>
+      <line class="arrow" x1="390" y1="68" x2="408" y2="68" marker-end="url(#ah4)"/>
+      <rect class="box" x="410" y="40" width="100" height="56" rx="5"/><text x="460" y="64" text-anchor="middle" class="b">Sign-off</text><text x="460" y="82" text-anchor="middle" class="small">timing, power, DRC</text>
+      <line class="arrow" x1="510" y1="68" x2="528" y2="68" marker-end="url(#ah4)"/>
+      <rect class="box" x="530" y="40" width="100" height="56" rx="5"/><text x="580" y="64" text-anchor="middle" class="b">Tape-out</text><text x="580" y="82" text-anchor="middle" class="small">masks made</text>
+      <line class="arrow" x1="630" y1="68" x2="648" y2="68" marker-end="url(#ah4)"/>
+      <rect class="box asic" x="650" y="40" width="90" height="56" rx="5"/><text x="695" y="64" text-anchor="middle" class="b">Fab · test</text><text x="695" y="82" text-anchor="middle" class="small">wafers, packaging</text>
+    </g>
+    <path class="dash" d="M695,96 v40 h-625 v-40" marker-end="url(#ah4)"/><text x="380" y="130" text-anchor="middle" class="small">an error found after tape-out requires new masks: months of delay and significant cost</text>
+    <text x="20" y="170" class="small b">Non-recurring engineering, paid once: design, verification, IP, masks. Of the order of $1–5M at 28 nm, far more at 5 nm. 12–24 months.</text>
+    <text x="20" y="192" class="small">Per unit: die area × wafer cost ÷ yield. Cents to a few dollars for a codec-sized die, at any volume.</text>
+    <text x="20" y="214" class="small">The thesis's synthesis step: Synopsys Design Compiler on TSMC 28 nm reported area, timing at 450 MHz and power.</text>
+  </svg><figcaption>The ASIC flow. The thesis's "synthesis results" are the output of the second stage: area, timing and power, before placement, routing and manufacture.</figcaption></figure>
+  <div class="grid2">
+    <div><figure class="diagram" style="margin-top:0"><div id="breakEven"></div><figcaption>Illustrative economics: an FPGA at $300 per unit compared with an ASIC with $3M of non-recurring cost and $15 per unit. Above the crossing point (about 10,500 units) the ASIC is cheaper, and the difference grows with volume. Actual figures depend on the process node, die size and FPGA grade; the shape of the comparison is general.</figcaption></figure></div>
+    <div><figure class="diagram" style="margin-top:0"><div id="bitcoinChart"></div><figcaption>Energy efficiency of Bitcoin mining by platform, in megahashes per joule (approximate values from hardware reports of the period: CPU and GPU 2010–11, FPGA 2011, ASICs 2013 and 2015). Each platform improved efficiency by roughly an order of magnitude. Video codec implementations follow the same progression as a standard stabilises.</figcaption></figure></div>
+  </div>
+  <div class="grid2">
+    <div class="pro"><h3>Strengths</h3><ul class="plain"><li>Performance per watt: tens to hundreds of times that of a CPU for the same function (the thesis cites about 20 times the performance at about 20 times lower power; Hameed et al. measured a 500-fold energy difference for H.264).</li><li>Lowest unit cost and size at volume; integration of a complete system on one die.</li><li>Deterministic, real-time behaviour; the smallest and lowest-power implementation possible.</li></ul></div>
+    <div class="con"><h3>Limitations</h3><ul class="plain"><li>Millions in non-recurring cost and one to two years before the first unit.</li><li>No flexibility: the function, and the standard, must be final.</li><li>Risk: a logic error or an unhandled case found after tape-out requires a new set of masks.</li><li>Requires the volume, or the power and size constraint, that justifies the above.</li></ul></div>
+  </div>
+  <div class="callout"><span class="k">In the thesis</span><p>Every design choice in the explainer is an ASIC design choice: a fixed latency so that blocks chain without stalls, a throughput requirement in samples per cycle derived from 4K60 at 450 MHz, and a systematic accounting of gates, kilobits and milliwatts. Because nothing can be corrected after manufacture, each block was verified bit-exactly against the reference software, over a hundred thousand random vectors and over complete encoded sequences, before the chip was committed.</p></div>
+  <div class="remember"><span class="k">Summary</span><ol><li>Fixing the function at design time yields the highest efficiency.</li><li>Economics: non-recurring engineering is paid once; units are the cheapest and lowest-power at volume.</li><li>No corrections after manufacture: the standard must be final and the verification exhaustive.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 5 ===================== -->
+<section class="level" id="l5" data-level="5">
+  <div class="lhead"><span class="rung">Level 5 · all four platforms</span><h2>How they are combined: a board, a chip, an appliance</h2><p class="sub">The platforms are complementary. The CPU acts as host; the other platforms are devices under its control. On a PC they are separate cards. In a phone they are blocks on one die. In a professional encoder, the codec chip performs the pixel processing and a small CPU performs control and networking.</p></div>
+  <div class="grid2">
+    <div class="intu"><h3>How it works</h3>
+      <p>A motherboard connects one host processor to several devices. The CPU boots, runs the operating system and the device drivers, and controls main memory. Each device is attached to a bus (PCIe for expansion cards, the memory bus for DRAM) and usually has its own local memory. Work is delegated by a fixed protocol: the CPU writes a job description, the device reads its input data by direct memory access (DMA), processes it, and raises an interrupt when it has finished. The CPU is free during the operation. This mechanism, called offloading, is the same for a GPU, an FPGA card, a network card and a video capture card.</p>
+      <p style="margin-top:10px">The limiting resource is usually the bus. PCIe 4.0 ×16 transfers about 32 GB/s in each direction, whereas a GPU's local memory delivers terabytes per second. Efficient systems therefore move data once, process it where it resides, and submit work in large batches.</p>
+      <div class="decision"><b>The decision of the 2000s: heterogeneous computing.</b> Once clock frequency stopped increasing, further gains came from placing specialised engines next to the CPU: GPUs for graphics and later AI, FPGAs for protocols, fixed-function blocks for video, cryptography and radio. Hennessy and Patterson's 2018 Turing lecture described this as the era of domain-specific architectures.</div>
+    </div>
+    <div><h3>Three systems in which all four platforms coexist</h3>
+      <ul class="plain">
+        <li><b>A PC or server motherboard.</b> A CPU socket, DRAM slots, and PCIe slots holding a GPU, an FPGA card, a capture card or a network card. Separate chips, separate memories, one bus.</li>
+        <li><b>A system on chip.</b> A phone or laptop SoC places CPU cores, a GPU, a neural engine, an image signal processor, a modem, a display engine and a video codec engine on one die, sharing one DRAM through an on-chip network. Each block is an ASIC design; the video engine is the consumer form of the blocks the thesis builds.</li>
+        <li><b>A professional encoder appliance.</b> Video enters over SDI or HDMI, a codec ASIC (an FPGA in the previous generation) compresses it, and a small ARM-based SoC runs Linux, the web interface, rate control and the IP streaming stack. The pixel processing and the control processing are placed on different platforms by design.</li>
+      </ul>
+    </div>
+  </div>
+  <figure class="diagram scroll"><svg viewBox="0 0 820 400" role="img" aria-label="A PC motherboard: the CPU package with its integrated GPU and media engine, DRAM, a chipset, and PCIe slots holding a GPU card with its own memory, an FPGA accelerator card, a capture card, an SSD and a network card; bandwidths are labelled.">
+    <defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <rect class="dash" x="10" y="10" width="800" height="380" rx="8"/><text x="22" y="30" class="small">MOTHERBOARD · one power supply, one cooling budget, one bus fabric</text>
+    <rect class="box cpu" x="60" y="60" width="240" height="120" rx="6"/><text x="180" y="84" text-anchor="middle" class="b">CPU package</text>
+    <rect class="box soft" x="76" y="98" width="100" height="30" rx="3"/><text x="126" y="117" text-anchor="middle" class="small">8–64 cores + L3</text>
+    <rect class="box soft" x="184" y="98" width="100" height="30" rx="3"/><text x="234" y="117" text-anchor="middle" class="small">integrated GPU</text>
+    <rect class="box asic" x="76" y="136" width="208" height="30" rx="3"/><text x="180" y="155" text-anchor="middle" class="small">media engine: H.264/HEVC/AV1 codec block (an ASIC block)</text>
+    <rect class="box" x="360" y="60" width="130" height="120" rx="6"/><text x="425" y="84" text-anchor="middle" class="b">DRAM</text><text x="425" y="104" text-anchor="middle" class="small">DDR5 modules</text><text x="425" y="122" text-anchor="middle" class="small">32–256 GB</text><text x="425" y="142" text-anchor="middle" class="small">the CPU's main memory</text>
+    <line class="arrow" x1="300" y1="120" x2="358" y2="120" marker-end="url(#ah5)" marker-start="url(#ah5)"/><text x="329" y="112" text-anchor="middle" class="small">~50–100 GB/s</text>
+    <rect class="box" x="60" y="220" width="240" height="50" rx="6"/><text x="180" y="241" text-anchor="middle" class="b">Chipset</text><text x="180" y="259" text-anchor="middle" class="small">additional PCIe lanes, USB, SATA, slower devices</text>
+    <line class="arrow" x1="180" y1="180" x2="180" y2="218" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="box gpu" x="540" y="40" width="250" height="90" rx="6"/><text x="665" y="62" text-anchor="middle" class="b">GPU card (PCIe ×16 slot)</text><text x="665" y="82" text-anchor="middle" class="small">thousands of lanes · own 8–80 GB memory</text><text x="665" y="100" text-anchor="middle" class="small">0.5–3+ TB/s locally · 150–700 W</text><text x="665" y="118" text-anchor="middle" class="small">+ NVENC/NVDEC codec blocks</text>
+    <line class="arrow" x1="300" y1="90" x2="538" y2="68" marker-end="url(#ah5)" marker-start="url(#ah5)"/><text x="430" y="52" text-anchor="middle" class="small">PCIe 4.0 ×16 ≈ 32 GB/s each way</text>
+    <rect class="box fpga" x="540" y="150" width="250" height="70" rx="6"/><text x="665" y="172" text-anchor="middle" class="b">FPGA accelerator card (PCIe ×8/×16)</text><text x="665" y="192" text-anchor="middle" class="small">custom logic: networking, video, finance</text><text x="665" y="210" text-anchor="middle" class="small">deterministic latency · 25–225 W · own DRAM/HBM</text>
+    <line class="arrow" x1="300" y1="150" x2="538" y2="185" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="box" x="540" y="240" width="250" height="56" rx="6"/><text x="665" y="262" text-anchor="middle" class="b">Capture card (PCIe ×4)</text><text x="665" y="282" text-anchor="middle" class="small">SDI / HDMI input, frames written to memory by DMA</text>
+    <line class="arrow" x1="300" y1="245" x2="538" y2="268" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="box" x="540" y="316" width="118" height="46" rx="6"/><text x="599" y="336" text-anchor="middle" class="b">NVMe SSD</text><text x="599" y="352" text-anchor="middle" class="small">PCIe ×4, ~7 GB/s</text>
+    <rect class="box" x="672" y="316" width="118" height="46" rx="6"/><text x="731" y="336" text-anchor="middle" class="b">Network card</text><text x="731" y="352" text-anchor="middle" class="small">10–100 Gb/s</text>
+    <line class="arrow" x1="300" y1="258" x2="538" y2="339" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <text x="60" y="310" class="small">Encoding one frame on the GPU card: capture card → DMA → DRAM → PCIe → GPU memory → NVENC block →</text>
+    <text x="60" y="328" class="small">bitstream → PCIe → DRAM → network card. The CPU wrote four job descriptions and handled four interrupts.</text>
+    <text x="60" y="360" class="small b">Design rule: move data once, process it where it resides, submit work in large batches.</text>
+  </svg><figcaption>A PC motherboard as a network of engines. The CPU package itself contains a GPU and a video codec block; the expansion cards add larger instances of the same platforms.</figcaption></figure>
+  <div class="grid2">
+    <div><figure class="diagram scroll" style="margin-top:0"><svg viewBox="0 0 520 300" role="img" aria-label="A phone system on chip: CPU cores, GPU, neural engine, image signal processor, video codec engine, display engine and modem connected by an on-chip network and sharing one LPDDR memory.">
+      <rect class="box" x="10" y="10" width="500" height="280" rx="10"/><text x="24" y="32" class="small">PHONE / LAPTOP SoC · one die · 3–15 W in total</text>
+      <rect class="box cpu" x="30" y="50" width="140" height="60" rx="5"/><text x="100" y="74" text-anchor="middle" class="b">CPU cluster</text><text x="100" y="92" text-anchor="middle" class="small">large and small cores</text>
+      <rect class="box gpu" x="190" y="50" width="140" height="60" rx="5"/><text x="260" y="74" text-anchor="middle" class="b">GPU</text><text x="260" y="92" text-anchor="middle" class="small">graphics, shaders</text>
+      <rect class="box asic" x="350" y="50" width="140" height="60" rx="5"/><text x="420" y="74" text-anchor="middle" class="b">Neural engine</text><text x="420" y="92" text-anchor="middle" class="small">matrix arithmetic ASIC</text>
+      <rect class="box soft" x="30" y="128" width="460" height="22" rx="3"/><text x="260" y="143" text-anchor="middle" class="small">network on chip: every block shares one memory</text>
+      <rect class="box asic" x="30" y="170" width="140" height="60" rx="5"/><text x="100" y="194" text-anchor="middle" class="b">Video engine</text><text x="100" y="212" text-anchor="middle" class="small">HEVC/AV1/VVC encode and decode</text>
+      <rect class="box asic" x="190" y="170" width="140" height="60" rx="5"/><text x="260" y="194" text-anchor="middle" class="b">ISP · display</text><text x="260" y="212" text-anchor="middle" class="small">camera pipeline, screen</text>
+      <rect class="box asic" x="350" y="170" width="140" height="60" rx="5"/><text x="420" y="194" text-anchor="middle" class="b">Modem · Wi-Fi</text><text x="420" y="212" text-anchor="middle" class="small">radio basebands</text>
+      <rect class="box" x="30" y="248" width="460" height="30" rx="5"/><text x="260" y="268" text-anchor="middle" class="small">memory controller → LPDDR5 (shared by all blocks, ~50–100 GB/s)</text>
+    </svg><figcaption>A system on chip. Most of the die area is ASIC blocks; the CPU cores occupy a minority of it. The video engine is the consumer form of the thesis's blocks.</figcaption></figure></div>
+    <div><figure class="diagram scroll" style="margin-top:0"><svg viewBox="0 0 520 300" role="img" aria-label="A professional encoder appliance: video input over SDI or HDMI, a codec ASIC performs the compression, a control SoC runs Linux, rate control and IP streaming, and the output leaves over Ethernet.">
+      <defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect class="box" x="10" y="10" width="500" height="280" rx="10"/><text x="24" y="32" class="small">PROFESSIONAL ENCODER APPLIANCE · fanless · battery or Ethernet power</text>
+      <rect class="box soft" x="30" y="60" width="90" height="56" rx="5"/><text x="75" y="84" text-anchor="middle" class="b">Video in</text><text x="75" y="102" text-anchor="middle" class="small">SDI · HDMI</text>
+      <line class="arrow" x1="120" y1="88" x2="148" y2="88" marker-end="url(#ah6)"/>
+      <rect class="box asic" x="150" y="48" width="200" height="80" rx="5"/><text x="250" y="72" text-anchor="middle" class="b">Codec ASIC</text><text x="250" y="90" text-anchor="middle" class="small">AVC · HEVC · VVC, encode and decode</text><text x="250" y="108" text-anchor="middle" class="small">transform, ALF, prediction, at 450 MHz</text>
+      <rect class="box" x="370" y="60" width="120" height="56" rx="5"/><text x="430" y="84" text-anchor="middle" class="b">DRAM</text><text x="430" y="102" text-anchor="middle" class="small">reference pictures</text>
+      <line class="arrow" x1="350" y1="88" x2="368" y2="88" marker-end="url(#ah6)" marker-start="url(#ah6)"/>
+      <line class="arrow" x1="250" y1="128" x2="250" y2="168" marker-end="url(#ah6)" marker-start="url(#ah6)"/><text x="262" y="152" class="small">bitstream, parameters, statistics</text>
+      <rect class="box cpu" x="150" y="170" width="200" height="80" rx="5"/><text x="250" y="194" text-anchor="middle" class="b">Control SoC (ARM CPU)</text><text x="250" y="212" text-anchor="middle" class="small">Linux, web interface, rate control, encryption,</text><text x="250" y="230" text-anchor="middle" class="small">IP streaming (RTP, SRT, transport streams)</text>
+      <line class="arrow" x1="350" y1="210" x2="398" y2="210" marker-end="url(#ah6)"/>
+      <rect class="box soft" x="400" y="182" width="90" height="56" rx="5"/><text x="445" y="206" text-anchor="middle" class="b">Network</text><text x="445" y="224" text-anchor="middle" class="small">Ethernet out</text>
+      <text x="30" y="272" class="small">Pixel processing on the ASIC (billions of operations per second at a few watts); decisions and packets on the CPU.</text>
+    </svg><figcaption>Where the thesis's blocks are used: in the codec ASIC of an appliance of this kind. The CPU beside it selects the ALF filter-set candidates and the quantisation; the ASIC performs the arithmetic.</figcaption></figure></div>
+  </div>
+  <div class="remember"><span class="k">Summary</span><ol><li>The CPU is the host; every other platform is a device that it controls through a bus.</li><li>Data movement, not arithmetic, sets the limits: move data once, process it in place, batch the work.</li><li>A system on chip is a motherboard on one die; a modern CPU package is already a small SoC with codec ASIC blocks.</li></ol></div>
+</section>
+
+<!-- ===================== LEVEL 6 ===================== -->
+<section class="level" id="l6" data-level="6">
+  <div class="lhead"><span class="rung">Level 6</span><h2>Choosing a platform</h2><p class="sub">Six questions determine the platform. Their answers change over a product's lifetime, so a function typically moves along the scale: research on CPUs and GPUs, a first product on FPGAs, an ASIC once the standard and the volume justify it.</p></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Criterion</th><th><span class="chip cpu"><i></i>CPU</span></th><th><span class="chip gpu"><i></i>GPU</span></th><th><span class="chip fpga"><i></i>FPGA</span></th><th><span class="chip asic"><i></i>ASIC</span></th></tr></thead>
+    <tbody>
+      <tr><td>What the designer writes</td><td>a program (any language)</td><td>a program (kernels, shaders)</td><td>a circuit (VHDL/Verilog) → bitstream</td><td>a circuit (RTL) → masks</td></tr>
+      <tr><td>Change after shipping</td><td>trivial</td><td>trivial</td><td>reload a bitstream</td><td>impossible (new masks)</td></tr>
+      <tr><td>Time to first working unit</td><td>hours</td><td>days</td><td>weeks to months</td><td>12–24 months</td></tr>
+      <tr><td>Up-front cost</td><td>none</td><td>none</td><td>tools and design time</td><td>$1M–$100M+ NRE</td></tr>
+      <tr><td>Unit cost</td><td>$50–$10,000</td><td>$200–$30,000</td><td>$10–$10,000</td><td>cents to dollars at volume</td></tr>
+      <tr><td>Energy per result (fixed function)</td><td>reference (1×)</td><td>about 10× better on parallel work</td><td>about 10–100× better</td><td>about 100–1000× better</td></tr>
+      <tr><td>Clock frequency</td><td>3–5 GHz</td><td>1.5–2.5 GHz</td><td>0.1–0.5 GHz</td><td>as timing allows (0.4–3 GHz)</td></tr>
+      <tr><td>Latency determinism</td><td>low (caches, OS)</td><td>low (batching)</td><td>cycle-exact</td><td>cycle-exact</td></tr>
+      <tr><td>Typical power</td><td>15–250 W</td><td>150–700 W</td><td>5–225 W</td><td>milliwatts to tens of watts</td></tr>
+      <tr><td>Typical use</td><td>control, irregular logic, general software</td><td>bulk parallel arithmetic, AI, graphics</td><td>custom logic at low or medium volume; evolving protocols</td><td>fixed functions at volume or under tight power and size limits</td></tr>
+      <tr><td>In video coding</td><td>offline encoders, research, control software</td><td>filters and scaling; hosts codec blocks</td><td>professional encoders while a standard matures (the partner's HEVC generation)</td><td>codec engines in phones, GPUs and professional chips (the thesis)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="rules">
+    <div class="rule"><span class="q">Is the function final (the standard frozen, the algorithm settled)? If not, an ASIC is excluded; use an FPGA or software.</span><span class="chip asic"><i></i>ASIC only if yes</span></div>
+    <div class="rule"><span class="q">Do volume and product lifetime cover the non-recurring cost? Thousands of units per year rarely do; hundreds of thousands do.</span><span class="chip fpga"><i></i>FPGA below that volume</span></div>
+    <div class="rule"><span class="q">Are power, size or heat the binding constraint (battery, fanless enclosure, portable unit, phone)? Only an ASIC meets the tightest limits.</span><span class="chip asic"><i></i>ASIC</span></div>
+    <div class="rule"><span class="q">Is the work data-parallel, on a PC or server with power available? A GPU gives the shortest time to a result.</span><span class="chip gpu"><i></i>GPU</span></div>
+    <div class="rule"><span class="q">Is the work irregular or latency-sensitive, or general software? It belongs on the CPU, which is required as the host in any case.</span><span class="chip cpu"><i></i>CPU</span></div>
+    <div class="rule"><span class="q">Must latency be exact, or must units be updated in the field? Use programmable logic.</span><span class="chip fpga"><i></i>FPGA</span></div>
+  </div>
+  <div class="callout"><span class="k">The thesis on this scale</span><p>VVC was developed and evaluated in software (the VTM reference model on CPUs). The partner's previous codec generation shipped on FPGAs. The VVC generation moved to an ASIC once the standard was final (July 2020) and the product volumes and power targets required it. The thesis describes the work at that last stage: the function is fixed, so the design problem is area, memory and power at the required number of samples per cycle.</p></div>
+  <div class="remember"><span class="k">Summary</span><ol><li>Final function with volume or power pressure → ASIC; changing function or small volume → FPGA; bulk arithmetic → GPU; everything else → CPU.</li><li>Products move along the scale over their lifetime; the host CPU is present at every stage.</li><li>The question is not which platform is best, but which platform for which part of the work.</li></ol></div>
+</section>
+
+<!-- ===================== QUIZ ===================== -->
+<section class="quiz" id="quiz">
+  <div class="lhead"><span class="rung">Quiz</span><h2>Self-assessment: 20 questions</h2><p class="sub">One question at a time, with the reasoning shown after each answer. The final score is broken down by level so that you know which sections to reread. Nothing is transmitted; your best score is stored in this browser only.</p></div>
+  <div class="qcard" id="qcard">
+    <div class="qtop"><span id="qcount">Question 1 of 20</span><span id="qlevel">Level 0</span><span id="qbest" hidden></span></div>
+    <div class="qbar"><i id="qprog"></i></div>
+    <div id="qbody"></div>
+  </div>
+</section>
+
+<section class="sources">
+  <div class="eyebrow">Sources and further reading</div>
+  <ul>
+    <li>Horowitz, "Computing's energy problem (and what we can do about it)", ISSCC 2014: energy per operation.</li>
+    <li>Hameed et al., "Understanding sources of inefficiency in general-purpose chips", ISCA 2010: the H.264 encoder study (about 500× in energy).</li>
+    <li>Kuon and Rose, "Measuring the gap between FPGAs and ASICs", IEEE TCAD 2007: area, delay and power ratios.</li>
+    <li>Hennessy and Patterson, "A new golden age for computer architecture", Turing lecture 2018 / CACM 2019: the end of Dennard scaling and domain-specific architectures.</li>
+    <li>Farhat, "Efficient hardware designs of the new VVC tools for ASIC platforms", INSA Rennes 2022, §3.5 (platform comparison, SWaP), and the <a href="explainer.html">narrated walkthrough</a> and <a href="index.html">the story in 10 scenes</a>.</li>
+    <li>Dates and product facts (Intel 4004, GeForce 256, CUDA, AlexNet, Xilinx XC2064, Zynq, Microsoft Catapult, TSMC, Apple A4, Bitcoin ASICs, Google TPU) from the manufacturers' and standard histories. Bandwidth and power figures are typical ranges for products of the 2020s.</li>
+  </ul>
+</section>
+</main>
+
+<script>
+(function(){
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt = v => Number(v).toLocaleString('en-US', {maximumFractionDigits: 2});
+
+  /* ---------- logarithmic bar chart ---------- */
+  function logBars(el, rows, opt){
+    const W = 640, left = 8, right = 100, labelH = 18, barH = 14, rowH = 48, top = 6;
+    const lo = Math.log10(opt.min), hi = Math.log10(opt.max), span = W - left - right;
+    const H = top + rows.length * rowH + 30;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.title) + '">';
+    rows.forEach((r, i) => {
+      const y = top + i * rowH, by = y + labelH + 4;
+      const w = Math.max(6, span * (Math.log10(r.value) - lo) / (hi - lo));
+      s += '<text x="' + left + '" y="' + (y + 13) + '" class="lbl">' + esc(r.label) + '</text>';
+      s += '<path class="bar' + (r.emph ? ' emph' : '') + '" d="M' + left + ',' + by + ' h' + (w - 4) + ' a4,4 0 0 1 4,4 v' + (barH - 8) + ' a4,4 0 0 1 -4,4 h-' + (w - 4) + ' z"><title>' + esc(r.label) + ': ' + fmt(r.value) + ' ' + esc(opt.unit) + '</title></path>';
+      s += '<text x="' + (left + w + 8) + '" y="' + (by + barH - 3) + '" class="val">' + (r.approx ? '≈ ' : '') + fmt(r.value) + '</text>';
+    });
+    const ay = H - 16;
+    s += '<line class="axis" x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + ay + '"/>';
+    for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) {
+      const x = left + span * (e - lo) / (hi - lo);
+      s += '<line class="grid" x1="' + x + '" y1="' + (ay - 4) + '" x2="' + x + '" y2="' + ay + '"/><text x="' + x + '" y="' + (ay + 12) + '" text-anchor="middle" class="small">' + fmt(Math.pow(10, e)) + '</text>';
+    }
+    s += '<text x="' + (W - right + 90) + '" y="' + (ay + 12) + '" text-anchor="end" class="small">' + esc(opt.unit) + ', logarithmic scale</text></svg>';
+    el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">' + esc(opt.title) + '</div>' + s;
+  }
+  logBars(document.getElementById('energyChart'), [
+    {label: '32-bit integer addition', value: 0.1},
+    {label: '32-bit floating-point multiplication', value: 3.7},
+    {label: 'Read 32 bits from a small (8 KB) SRAM cache', value: 5},
+    {label: 'Read from a 1 MB SRAM cache', value: 100, approx: true},
+    {label: 'One complete CPU instruction (fetch, decode, registers, control)', value: 70, approx: true, emph: true},
+    {label: 'Read 32 bits from DRAM', value: 640, emph: true}
+  ], {min: 0.05, max: 1000, unit: 'pJ', title: 'Energy per operation at 45 nm'});
+  logBars(document.getElementById('bitcoinChart'), [
+    {label: 'CPU (2010)', value: 0.1, approx: true},
+    {label: 'GPU (2011)', value: 2.5, approx: true},
+    {label: 'FPGA (2011)', value: 20, approx: true},
+    {label: 'First ASICs (2013)', value: 100, approx: true},
+    {label: 'ASIC (2015)', value: 3600, approx: true, emph: true}
+  ], {min: 0.05, max: 10000, unit: 'MH/J', title: 'Bitcoin mining efficiency by platform'});
+
+  /* ---------- break-even chart ---------- */
+  (function(){
+    const el = document.getElementById('breakEven');
+    const W = 640, H = 300, L = 70, R = 20, T = 20, B = 46;
+    const xmax = 25000, ymax = 7.5e6;
+    const X = n => L + (W - L - R) * n / xmax, Y = c => T + (H - T - B) * (1 - c / ymax);
+    const fpga = n => 300 * n, asic = n => 3e6 + 15 * n;
+    const be = 3e6 / (300 - 15);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Total cost against units built: the FPGA line rises from zero at 300 dollars per unit; the ASIC line starts at 3 million dollars and rises at 15 dollars per unit; they cross near 10,500 units.">';
+    [0, 2.5e6, 5e6, 7.5e6].forEach(c => { s += '<line class="grid" x1="' + L + '" y1="' + Y(c) + '" x2="' + (W - R) + '" y2="' + Y(c) + '"/><text x="' + (L - 6) + '" y="' + (Y(c) + 4) + '" text-anchor="end" class="small">$' + (c / 1e6) + 'M</text>'; });
+    [0, 5000, 10000, 15000, 20000, 25000].forEach(n => { s += '<text x="' + X(n) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="small">' + fmt(n) + '</text>'; });
+    s += '<line class="axis" x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (H - B) + '"/><line class="axis" x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - R) + '" y2="' + (H - B) + '"/>';
+    s += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 6) + '" text-anchor="middle" class="small">units built</text>';
+    s += '<polyline class="line-fpga" points="' + X(0) + ',' + Y(fpga(0)) + ' ' + X(xmax) + ',' + Y(fpga(xmax)) + '"/>';
+    s += '<polyline class="line-asic" points="' + X(0) + ',' + Y(asic(0)) + ' ' + X(xmax) + ',' + Y(asic(xmax)) + '"/>';
+    s += '<text x="' + (X(21000) - 6) + '" y="' + (Y(fpga(21000)) - 8) + '" text-anchor="end" class="lbl">FPGA: $300 per unit</text>';
+    s += '<text x="' + (X(16000)) + '" y="' + (Y(asic(16000)) - 8) + '" text-anchor="middle" class="lbl">ASIC: $3M once + $15 per unit</text>';
+    s += '<circle class="ring" cx="' + X(be) + '" cy="' + Y(fpga(be)) + '" r="7" style="fill:var(--fg)"/><text x="' + (X(be) + 12) + '" y="' + (Y(fpga(be)) + 4) + '" class="val">break-even ≈ ' + fmt(Math.round(be / 100) * 100) + ' units</text>';
+    s += '</svg>';
+    el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">Total cost against volume (illustrative values)</div>' + s;
+  })();
+
+  /* ---------- GPU lane grid and FPGA fabric ---------- */
+  (function(){
+    const g = document.getElementById('aluGrid'); let s = '';
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 16; c++) s += '<rect class="tint-gpu" x="' + (40 + c * 25) + '" y="' + (96 + r * 34) + '" width="21" height="28" rx="2" stroke="var(--p-gpu)" stroke-width="1"/>';
+    g.innerHTML = s;
+  })();
+  (function(){
+    const g = document.getElementById('fpgaGrid'); let s = '';
+    s += '<rect class="dash" x="10" y="10" width="740" height="300" rx="8"/><text x="22" y="30" class="small">FPGA DIE · input/output blocks and transceivers at the edge · configuration memory holds the bitstream</text>';
+    const cols = 9, rows = 4, x0 = 40, y0 = 50, cw = 62, ch = 50, gap = 12;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = x0 + c * (cw + gap), y = y0 + r * (ch + gap);
+      if (c === 3) { s += '<rect class="tint-fpga" x="' + x + '" y="' + y + '" width="' + cw + '" height="' + ch + '" rx="3" stroke="var(--p-fpga)"/><text x="' + (x + cw / 2) + '" y="' + (y + 29) + '" text-anchor="middle" class="small">Block RAM</text>'; continue; }
+      if (c === 6) { s += '<rect class="tint-fpga" x="' + x + '" y="' + y + '" width="' + cw + '" height="' + ch + '" rx="3" stroke="var(--p-fpga)"/><text x="' + (x + cw / 2) + '" y="' + (y + 23) + '" text-anchor="middle" class="small">DSP slice</text><text x="' + (x + cw / 2) + '" y="' + (y + 38) + '" text-anchor="middle" class="small">multiply-acc.</text>'; continue; }
+      s += '<rect class="box" x="' + x + '" y="' + y + '" width="' + cw + '" height="' + ch + '" rx="3"/><text x="' + (x + cw / 2) + '" y="' + (y + 22) + '" text-anchor="middle" class="small">LUT6</text><text x="' + (x + cw / 2) + '" y="' + (y + 38) + '" text-anchor="middle" class="small">+ flip-flop</text>';
+    }
+    for (let c = 0; c < cols - 1; c++) { const x = x0 + c * (cw + gap) + cw + gap / 2; s += '<line class="lane" x1="' + x + '" y1="' + (y0 - 6) + '" x2="' + x + '" y2="' + (y0 + rows * (ch + gap) - gap + 6) + '"/>'; }
+    for (let r = 0; r < rows - 1; r++) { const y = y0 + r * (ch + gap) + ch + gap / 2; s += '<line class="lane" x1="' + (x0 - 6) + '" y1="' + y + '" x2="' + (x0 + cols * (cw + gap) - gap + 6) + '" y2="' + y + '"/>'; }
+    s += '<text x="40" y="' + (y0 + rows * (ch + gap) + 14) + '" class="small">lines: programmable routing with a switch at every crossing · a 6-input LUT stores a 64-entry truth table and implements any logic function of 6 inputs</text>';
+    s += '<text x="40" y="' + (y0 + rows * (ch + gap) + 32) + '" class="small">design flow: VHDL/Verilog → synthesis → placement and routing → bitstream (minutes to hours) · all blocks operate in the same clock cycle</text>';
+    g.innerHTML = s;
+  })();
+
+  /* ---------- level bar highlighting ---------- */
+  const links = Array.from(document.querySelectorAll('.rungs a'));
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => { if (en.isIntersecting) { const id = en.target.id; links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id)); } });
+    }, {rootMargin: '-40% 0px -55% 0px', threshold: 0});
+    document.querySelectorAll('.level, .quiz').forEach(s => io.observe(s));
+  }
+
+  /* ---------- quiz ---------- */
+  const Q = [
+    {l: 0, q: 'There are three ways to make a computation faster. Which list is correct?', o: ['A higher clock frequency, more operations in parallel, less wasted work per result', 'More memory, more cores, more software optimisation', 'A higher clock frequency, a larger cache, a better compiler', 'Lower voltage, smaller transistors, more threads'], a: 0, w: 'Clock frequency stopped increasing around 2004; parallelism requires work that can be divided; specialisation removes the overhead of generality. The scale from CPU to ASIC is a progression along the third option.'},
+    {l: 0, q: 'In a general-purpose CPU, most of the energy of an instruction is spent on…', o: ['the arithmetic itself', 'fetching and decoding the instruction, register access, and moving data to and from memory', 'the clock distribution network', 'the operating system'], a: 1, w: 'A 32-bit addition costs about 0.1 pJ; a complete instruction costs tens of pJ and a DRAM access about 640 pJ. The arithmetic is a small fraction; the surrounding overhead is what a specialised circuit removes.'},
+    {l: 0, q: 'Hameed et al. (2010) compared an H.264 video encoder on a general-purpose processor with an ASIC. The energy ratio was about…', o: ['2', '20', '500', '50,000'], a: 2, w: 'About 500. SIMD and VLIW extensions recovered about a factor of 10; the remaining factor of 50 required custom datapaths that pass data between units without instructions or memory accesses.'},
+    {l: 1, q: 'Which property makes a CPU general-purpose?', o: ['It has many cores', 'The program is stored in memory as data, so a new task is a new program rather than a new machine', 'It runs at several gigahertz', 'It has a large cache'], a: 1, w: 'Von Neumann\'s 1945 stored-program architecture. The ENIAC, by contrast, had to be rewired for each problem.'},
+    {l: 1, q: 'Around 2004–2006, CPU manufacturers stopped increasing clock frequency and adopted multicore designs mainly because…', o: ['software could not use higher clock rates', 'transistors stopped shrinking', 'power density: smaller transistors no longer reduced power proportionally (the end of Dennard scaling), so faster chips would overheat', 'DRAM became too slow'], a: 2, w: 'Intel cancelled its 4 GHz Pentium 4 in 2004. Since then, performance has come from more cores and from accelerators placed next to the CPU.'},
+    {l: 1, q: 'For which task is a CPU the most suitable platform of the four?', o: ['Multiplying two large matrices', 'Running an operating system and code in which each step depends on the previous one', 'Filtering every pixel of a 4K frame', 'Decoding a video stream at a few milliwatts'], a: 1, w: 'Irregular, latency-sensitive logic is what the CPU\'s pipeline, caches and branch predictor are designed for. The other three tasks belong to the GPU, the GPU or ASIC, and the ASIC respectively.'},
+    {l: 2, q: 'How does a GPU mainly hide the latency of memory accesses?', o: ['With very large caches', 'With out-of-order execution', 'By switching between thousands of resident threads while some of them wait', 'By running at a higher clock frequency than a CPU'], a: 2, w: 'A GPU keeps thousands of thread groups resident and issues instructions from whichever group is ready. Its caches are small and its clock frequency is lower than a CPU\'s.'},
+    {l: 2, q: 'The problem that originally shaped the GPU was…', o: ['training neural networks', 'real-time 3D graphics: the same short program applied to millions of vertices and pixels', 'video compression', 'scientific simulation'], a: 1, w: 'Graphics rendering is highly parallel. CUDA (2007) later opened the GPU to general programs, and AlexNet (2012) made it the standard platform for neural networks.'},
+    {l: 2, q: 'When a video is encoded "on the GPU" with NVENC or Quick Sync, the work is performed by…', o: ['the shader cores running an encoder program', 'the CPU, with the GPU only displaying the result', 'a fixed-function codec block, an ASIC-style circuit on the GPU or CPU die', 'the GPU\'s memory controller'], a: 2, w: 'Codec engines are dedicated hardware blocks placed on the die. They are application-specific circuits hosted inside a programmable processor.'},
+    {l: 2, q: 'Why do divergent branches reduce GPU efficiency?', o: ['Branches are not supported on GPUs', 'All 32 threads of a group execute in lockstep, so both branches are executed and the inactive threads idle', 'Branch prediction is disabled to save power', 'Branches require a transfer over PCIe'], a: 1, w: 'SIMT execution issues one instruction for the whole group. Irregular control flow is the GPU\'s weakness and the CPU\'s strength.'},
+    {l: 3, q: 'An FPGA implements a design by…', o: ['executing instructions compiled for its cores', 'loading a bitstream that configures its look-up tables, flip-flops and routing switches into the described circuit', 'interpreting VHDL at run time', 'emulating an ASIC in software'], a: 1, w: 'After configuration, nothing is fetched or decoded. Data flows through logic and registers on every clock edge, as in an ASIC.'},
+    {l: 3, q: 'Compared with an ASIC implementing the same logic, an FPGA is approximately…', o: ['the same area and speed, but more expensive', 'about 35 times larger, 3–4 times slower and about 14 times higher in dynamic power for logic-only designs, with no mask cost and with reconfigurability', 'twice as large and half as fast', '1000 times larger'], a: 1, w: 'Kuon and Rose (2007). The area ratio falls to about 18 when the design uses the FPGA\'s hard DSP and RAM blocks.'},
+    {l: 3, q: 'The reasoning behind the first FPGA (1985) was that…', o: ['clock frequencies would stop increasing', 'falling transistor cost (Moore\'s law) would make programmable logic affordable, so designers could obtain custom hardware without a custom chip', 'software would replace hardware', 'DRAM would become free'], a: 1, w: 'Transistors were spent to obtain reconfigurability: custom logic without the cost and delay of a custom chip, and correctable after shipping.'},
+    {l: 3, q: 'According to this page, on which platform did the industrial partner\'s previous (HEVC) codec generation ship?', o: ['An ASIC', 'An FPGA', 'A GPU', 'A CPU'], a: 1, w: 'The HEVC generation was an FPGA-based fanless encoder. The VVC generation moved to an ASIC, which is the context of the thesis.'},
+    {l: 4, q: 'The cost that makes an ASIC a decision dependent on volume is…', o: ['the per-unit silicon cost', 'the non-recurring engineering cost: design, verification, IP and masks, paid once and spread over the units', 'the power consumption', 'the software licences'], a: 1, w: 'Non-recurring engineering is millions of dollars at 28 nm and far more at advanced nodes. Per unit, a codec-sized die costs cents to dollars. Above the break-even volume the ASIC is cheaper, and the difference grows.'},
+    {l: 4, q: 'In which order did Bitcoin mining hardware move through the platforms?', o: ['ASIC → FPGA → GPU → CPU', 'CPU → GPU → FPGA → ASIC', 'GPU → CPU → ASIC → FPGA', 'FPGA → CPU → GPU → ASIC'], a: 1, w: 'CPU (2009), GPU (2010), FPGA (2011), ASIC (2013), each roughly an order of magnitude more energy-efficient per hash. Video codec implementations follow the same progression as a standard stabilises.'},
+    {l: 4, q: 'Why must the standard, or the function, be final before an ASIC is designed?', o: ['Because the design tools cannot handle changes', 'Because nothing can be changed after tape-out: a correction requires new masks, months of delay and significant cost', 'Because the standards body forbids early implementations', 'Because FPGAs would otherwise be faster'], a: 1, w: 'A new set of masks is the ASIC\'s failure mode. This is why the thesis verified its blocks bit-exactly against the reference software before the chip was committed.'},
+    {l: 5, q: 'On a PC motherboard, a GPU or FPGA card exchanges data with the CPU and main memory mainly over…', o: ['the DRAM bus', 'PCIe', 'USB', 'the CPU\'s cache'], a: 1, w: 'PCIe 4.0 ×16 provides about 32 GB/s in each direction, tens of times less than a GPU\'s local memory. Hence the rule: move data once, process it in place, batch the work.'},
+    {l: 5, q: 'A smartphone SoC is best described as…', o: ['a CPU with a larger battery', 'CPU cores, a GPU, a neural engine, an image signal processor, a modem and video codec blocks on one die, sharing one memory', 'an FPGA with a fixed bitstream', 'a GPU with an attached CPU'], a: 1, w: 'Most of the die is ASIC blocks; the CPU cores are a minority. The video engine is the consumer form of the thesis\'s blocks.'},
+    {l: 6, q: 'A live 4K VVC encoder must be built for a fanless portable unit, with the standard final and tens of thousands of units planned. Which platform?', o: ['CPU: it is the most flexible', 'GPU: it has the most computing power', 'FPGA: it can be updated in the field', 'ASIC: fixed function, sufficient volume, and a strict power and size limit'], a: 3, w: 'All three conditions for an ASIC hold: a final function, volume to cover the non-recurring cost, and a size, weight and power limit that only an ASIC meets. This was the partner\'s decision for VVC.'}
+  ];
+  const LEVELS = {0: 'Level 0 · principle', 1: 'Level 1 · CPU', 2: 'Level 2 · GPU', 3: 'Level 3 · FPGA', 4: 'Level 4 · ASIC', 5: 'Level 5 · combined', 6: 'Level 6 · choosing'};
+  const store = { get(){ try { return JSON.parse(localStorage.getItem('silicon-ladder') || '{}'); } catch(e){ return {}; } }, set(o){ try { localStorage.setItem('silicon-ladder', JSON.stringify(o)); } catch(e){} } };
+  const qbody = document.getElementById('qbody'), qcount = document.getElementById('qcount'), qlevel = document.getElementById('qlevel'), qprog = document.getElementById('qprog'), qbest = document.getElementById('qbest');
+  let st = {i: 0, answers: [], order: Q.map((_, i) => i)};
+
+  function showBest(){ const b = store.get().best; if (b != null) { qbest.textContent = 'best score so far: ' + b + ' / ' + Q.length; qbest.hidden = false; } }
+  function render(){
+    if (st.i >= Q.length) return renderResult();
+    const qi = st.order[st.i], q = Q[qi], ans = st.answers[st.i];
+    qcount.textContent = 'Question ' + (st.i + 1) + ' of ' + Q.length; qlevel.textContent = LEVELS[q.l]; qprog.style.width = (100 * st.i / Q.length) + '%';
+    let h = '<div class="qtext">' + esc(q.q) + '</div><div class="opts" role="group" aria-label="Answers">';
+    q.o.forEach((o, k) => {
+      const cls = ans == null ? '' : (k === q.a ? ' right' : (k === ans ? ' wrong' : ''));
+      h += '<button class="opt' + cls + '" data-k="' + k + '"' + (ans != null ? ' disabled' : '') + '><span class="k">' + 'ABCD'[k] + '</span><span>' + esc(o) + '</span></button>';
+    });
+    h += '</div>';
+    if (ans != null) h += '<div class="feedback"><b>' + (ans === q.a ? 'Correct.' : 'Incorrect. The answer is ' + 'ABCD'[q.a] + '.') + '</b> ' + esc(q.w) + '</div>';
+    h += '<div class="qnav"><button class="btn" id="qprev"' + (st.i === 0 ? ' disabled' : '') + '>← Previous</button><button class="btn primary" id="qnext"' + (ans == null ? ' disabled' : '') + '>' + (st.i === Q.length - 1 ? 'Show my score' : 'Next →') + '</button></div>';
+    qbody.innerHTML = h;
+  }
+  function renderResult(){
+    const score = st.answers.reduce((n, a, i) => n + (a === Q[st.order[i]].a ? 1 : 0), 0);
+    const per = {}; Object.keys(LEVELS).forEach(l => per[l] = {ok: 0, n: 0});
+    st.order.forEach((qi, i) => { const q = Q[qi]; per[q.l].n++; if (st.answers[i] === q.a) per[q.l].ok++; });
+    const s = store.get(); if (s.best == null || score > s.best) { s.best = score; store.set(s); }
+    qcount.textContent = 'Result'; qlevel.textContent = ''; qprog.style.width = '100%';
+    const verdict = score >= 18 ? 'Thorough understanding. The expert notes in the thesis explainer are the next step.' : score >= 14 ? 'Good understanding. Reread the levels below 70 % and retake the quiz.' : score >= 9 ? 'The overall picture is in place; the mechanisms need another reading. Start with the levels with the lowest scores.' : 'Reread the levels one at a time and retake the quiz. The explanation under each answer states where it comes from.';
+    let h = '<div class="score">' + score + ' / ' + Q.length + '</div><p style="margin-top:8px;max-width:60ch">' + esc(verdict) + '</p><div class="breakdown">';
+    Object.keys(LEVELS).forEach(l => { const p = per[l], pct = p.n ? Math.round(100 * p.ok / p.n) : 0; h += '<div class="brow"><span>' + esc(LEVELS[l]) + '</span><span class="track"><i style="width:' + pct + '%"></i></span><span class="n">' + p.ok + '/' + p.n + '</span></div>'; if (pct < 70) h += '<div class="brow"><span></span><a href="#l' + l + '">reread ' + esc(LEVELS[l]) + '</a><span></span></div>'; });
+    h += '</div><div class="qnav"><button class="btn" id="qreview">Review my answers</button><button class="btn primary" id="qretake">Retake (shuffled)</button></div>';
+    qbody.innerHTML = h; showBest();
+  }
+  qbody.addEventListener('click', e => {
+    const o = e.target.closest('.opt'); if (o && !o.disabled) { st.answers[st.i] = Number(o.dataset.k); render(); snap(); return; }
+    if (e.target.id === 'qnext') { st.i++; render(); snap(); document.getElementById('qcard').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'}); }
+    else if (e.target.id === 'qprev') { st.i--; render(); snap(); }
+    else if (e.target.id === 'qretake') { st = {i: 0, answers: [], order: Q.map((_, i) => i).sort(() => Math.random() - 0.5)}; render(); snap(); }
+    else if (e.target.id === 'qreview') { st.i = 0; render(); snap(); }
+  });
+  function snap(){ try { window.claude && window.claude.hot && window.claude.hot.snapshot && window.claude.hot.snapshot(() => ({quiz: st})); } catch(e){} }
+  function start(data){ if (data && data.quiz && Array.isArray(data.quiz.order) && data.quiz.order.length === Q.length) st = data.quiz; showBest(); render(); snap(); }
+  try { if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start); else start(window.claude && window.claude.hot ? window.claude.hot.data : null); } catch(e){ start(null); }
+})();
+</script>

@@ -1,0 +1,432 @@
+{
+  "parts": [
+    {"id": "A", "title": "The big picture", "blurb": "Why a video standard ends up in silicon, who was involved, and how a codec works."},
+    {"id": "B", "title": "The hardware side", "blurb": "What an ASIC is, how a block is specified, and the tricks that make it small."},
+    {"id": "C", "title": "The transform in silicon", "blurb": "MTS and LFNST: from matrices to multipliers, for the decoder and the encoder."},
+    {"id": "D", "title": "The adaptive loop filter in silicon", "blurb": "ALF: a memory problem first, a filter engine second, then a decision engine."},
+    {"id": "E", "title": "Results and what came after", "blurb": "The scoreboard, the firsts, the open roads, and the path to today."}
+  ],
+  "charts": {
+    "cmVsRm": {
+      "title": "Inverse MTS, 1-D, 2 samples/cycle: total cell area (ASIC 28 nm, 450 MHz)",
+      "unit": "cell area",
+      "rows": [
+        {"label": "Constant multipliers (shift-and-add)", "value": 266315},
+        {"label": "Regular multipliers (32 shared)", "value": 96849, "emph": true}
+      ],
+      "note": "63 % less area with real multipliers. Source: thesis Table 5.4."
+    },
+    "vvcVsHevc": {
+      "title": "1-D inverse transform at 2 samples/cycle: gate count (ASIC 28 nm, 450 MHz)",
+      "unit": "gates",
+      "rows": [
+        {"label": "HEVC: DCT-2 + DST-7 (constant multipliers)", "value": 41500},
+        {"label": "VVC: MTS only (regular multipliers)", "value": 89082},
+        {"label": "VVC: MTS + LFNST (regular multipliers)", "value": 163672, "emph": true}
+      ],
+      "note": "The VVC separable transform is about 2x HEVC; with LFNST about 4x. Source: thesis Tables 6.10 and 6.11."
+    },
+    "memoryScenarios": {
+      "title": "ALF decoder RAM by scanning order (4:2:2, 10-bit samples)",
+      "unit": "Kbit",
+      "rows": [
+        {"label": "A: filter the whole luma CTB first", "value": 193.28},
+        {"label": "B: filter the chroma CTBs first", "value": 213.12},
+        {"label": "C: interleave Cr, Cb, Y, Y per CTU line (proposed)", "value": 50.56, "emph": true}
+      ],
+      "note": "The interleaved order needs about 25 % of the memory of the other orders. Source: thesis Table 9.6."
+    }
+  },
+  "steps": [
+    {
+      "id": "01", "part": "A",
+      "title": "Why put a video standard into silicon?",
+      "kicker": "The question the thesis answers",
+      "points": [
+        "Video is most of internet traffic (the thesis cites Cisco's forecast of 82 % of IP traffic by 2023).",
+        "<b>VVC / H.266</b>, finalized in July 2020, saves 40–50 % of the bit rate versus HEVC at the same quality.",
+        "The price: encoding is estimated at about <b>10×</b> HEVC's complexity, decoding about <b>2×</b>.",
+        "The industrial partner builds professional encoders and decoders in hardware. Its next chip, an <b>ASIC</b>, needed VVC.",
+        "Thesis goal: implement VVC's new tools on that ASIC for real-time 4K, with minimal chip area, memory and power."
+      ],
+      "figures": [
+        {"file": "fig_3_3.png", "caption": "Thirty years of video coding standards: from H.261 to VVC/H.266 (2020).", "source": "Thesis Fig. 3.3, p. 20"}
+      ],
+      "expert": "<p>A video coding standard specifies only the bitstream syntax and the decoding process; the encoder is free, which is where products differentiate. VVC was developed by JVET (ITU-T VCEG + ISO/IEC MPEG) and published as ITU-T H.266 | ISO/IEC 23090-3. The thesis targets the three VVC tools whose hardware cost is disproportionate to their size in the specification: the two transform tools (MTS, LFNST) and the Adaptive Loop Filter.</p>",
+      "sources": ["Thesis §2.1–2.2, pp. 7–8", "Bross et al., 'Overview of the VVC standard and its applications', IEEE TCSVT 2021"],
+      "narration": "This is the story of a PhD that lives at the meeting point of two worlds: video compression standards, and chip design. Every few years, the video industry agrees on a new compression standard. Each one roughly halves the bits needed for the same picture quality, but each one also makes the encoder and the decoder far more expensive to compute. Versatile Video Coding, or VVC, also called H.266, was finalized in July 2020. It saves around forty to fifty percent of the bit rate compared with its predecessor, HEVC. The price is complexity: encoding is estimated to be about ten times more complex than HEVC, and decoding about twice. The industrial partner of this thesis, a company that builds professional video encoders and decoders in hardware, needed VVC inside its next chip. That chip is an ASIC: an application-specific integrated circuit, custom silicon designed for one job. The question of this thesis is simple to state and hard to answer: how do you implement the new VVC tools on an ASIC so that they run in real time on 4K video, while using as little chip area, memory and power as possible?"
+    },
+    {
+      "id": "02", "part": "A",
+      "title": "The setting: a lab, a company, a chip",
+      "kicker": "An industrial PhD, 2019–2022",
+      "points": [
+        "<b>INSA Rennes</b> (public engineering school) and the <b>IETR</b> institute (UMR CNRS 6164). The <b>VAADER</b> team works from video-coding algorithms down to embedded implementations: HEVC/VVC standardisation, the OpenVVC decoder.",
+        "<b>The industrial partner</b>: a company that designs professional hardware encoders, decoders and IP video systems around its own compression silicon. Its HEVC generation ran on FPGAs.",
+        "Around 2019 the partner started the architecture of its <b>H.266/VVC codec IP</b> (decoder and encoder) for an ASIC. The thesis delivered the transform and ALF blocks of that chip.",
+        "Directors: Daniel Ménard and Olivier Déforges (INSA Rennes). Day-to-day supervision: Wassim Hamidouche (IETR), with an industrial supervisor at the partner company.",
+        "Defended on 31 May 2022 in Rennes, before a jury of academic reviewers and examiners and one industrial examiner."
+      ],
+      "figures": [
+        {"svg": "org", "caption": "What each party brought to the thesis, and what flowed between them.", "source": "Synthesised from the thesis acknowledgements and §2.2, and from INSA Rennes public material"}
+      ],
+      "expert": "<p>Doctoral school ED 601 MathSTIC, speciality 'Signal, Image et Vision', thesis number D22-11 / 22ISAR 11, NNT 2022ISAR0009, HAL tel-04477217 (190 pages, in English with a French summary).</p>",
+      "sources": ["Thesis cover, acknowledgements and §2.2", "HAL record tel-04477217; theses.fr 2022ISAR0009", "insa-rennes.fr"],
+      "narration": "Three parties shaped this work. The academic side is INSA Rennes, a public engineering school in Brittany, and its electronics research institute, the IETR. Within the IETR, the VAADER team is known for working all the way from video coding algorithms down to embedded implementations: it contributed to the HEVC and VVC standards and built the OpenVVC software decoder. The industrial side is a company that designs and manufactures hardware for encoding, decoding and streaming video over IP: portable encoders used in broadcast and in surveillance, decoders, and IPTV systems. Its products are built around its own compression silicon, and around 2019 it began architecting a new codec chip for VVC. Ibrahim worked inside that codec team as an electronics engineer, while Daniel Ménard and Olivier Déforges directed the thesis, and Wassim Hamidouche supervised the research day to day. The deal is typical of an industrial PhD. The company brings the constraints: the clock frequency, the cycle budgets, the chip technology, and a real product to integrate into. The lab brings the method, the evaluation under the standard's common test conditions, and the publications. The thesis was defended in Rennes on the thirty-first of May, 2022."
+    },
+    {
+      "id": "03", "part": "A",
+      "title": "Inside a video codec",
+      "kicker": "The hybrid coding loop, common to H.264, HEVC and VVC",
+      "points": [
+        "Per block: <b>predict</b> (intra: from neighbours in the same picture; inter: from previous pictures with motion) → <b>residual</b> → <b>transform</b> → <b>quantize</b> → <b>entropy-code</b>.",
+        "The encoder contains a full <b>decoder</b>: it reconstructs exactly what the decoder will see, because future predictions must use the same pixels on both sides.",
+        "<b>In-loop filters</b> clean the reconstruction before it is stored as a reference picture.",
+        "Hence the inverse transform and the in-loop filter exist in <i>both</i> the encoder and the decoder, and the thesis designs them for both.",
+        "Quality is judged by PSNR/SSIM, and codecs are compared by Bjøntegaard delta rate (BD-rate) under JVET common test conditions."
+      ],
+      "figures": [
+        {"file": "fig_3_5.png", "caption": "The VVC encoder, with the decoder loop (grey box) inside it.", "source": "Thesis Fig. 3.5, p. 23"}
+      ],
+      "expert": "<p>Every encoder decision (partition, mode, transform type, filter parameters) is made by rate–distortion optimisation, minimising J = D + λR. The four redundancies removed are spatial, temporal, statistical and visual. Test configurations: All-Intra (AI), Random-Access (RA), Low-Delay B (LD-B); sequence classes A1–F; BD-rate reports the average bit-rate difference at equal PSNR between two RD curves.</p>",
+      "sources": ["Thesis §3.2–3.4, pp. 15–31"],
+      "narration": "Before the hardware, the algorithm. Every modern codec, from H.264 to VVC, is a hybrid coder, and it works block by block. For each block, the encoder first predicts what the block looks like, either from already coded neighbours in the same picture, which is intra prediction, or from previous pictures using motion compensation, which is inter prediction. It subtracts the prediction from the real block to get a residual. The residual goes through a transform that concentrates its energy into a few coefficients, then a quantization that throws away precision, then entropy coding that writes the bits. Here is the twist that matters for this thesis: the encoder contains a complete decoder. It reconstructs the picture exactly as the decoder will, because future predictions must be made from the same reconstructed pixels on both sides. That reconstruction passes through in-loop filters that clean up compression artifacts before the picture is stored as a reference. So two of the blocks in this loop, the inverse transform and the in-loop filter, exist in both the encoder and the decoder. That is why the thesis designs them for both."
+    },
+    {
+      "id": "04", "part": "A",
+      "title": "What VVC adds, and where the thesis sits",
+      "kicker": "Three tools, two sides of the codec",
+      "points": [
+        "Partitioning: coding tree units up to <b>128×128</b>, split by a quad-tree plus binary and ternary splits, so blocks can be rectangles.",
+        "Prediction: 65 intra directions, matrix-based intra prediction, affine motion, decoder-side motion refinement, bi-directional optical flow.",
+        "Transform: <b>MTS</b> (choose among DCT-2, DST-7, DCT-8 per direction) + <b>LFNST</b> (a secondary transform) + sub-block transform.",
+        "In-loop filters: LMCS → deblocking → SAO → <b>ALF</b> with cross-component ALF.",
+        "Thesis scope (red in the map): MTS and LFNST, and ALF, each for the decoder and for the encoder."
+      ],
+      "figures": [
+        {"file": "fig_11_1.png", "caption": "The thesis map: which chapters cover which blocks of the VVC codec.", "source": "Thesis Fig. 11.1, p. 154"}
+      ],
+      "expert": "<p>Transform-block limits: 64×64 luma, 32×32 chroma. MTS applies to luma blocks below 64 with five horizontal/vertical combinations; LFNST is enabled only on DCT-2 blocks. Dependent scalar quantisation and CABAC entropy coding complete the chain. The hardware cost of the targeted tools comes from three places: more multiplications (new transform types and sizes), more kernel storage (3 MTS kernels, 8 LFNST kernels, 64 fixed ALF filters), and, for ALF, the pixel neighbourhoods that must sit in memory.</p>",
+      "sources": ["Thesis §3.4, pp. 22–31", "Thesis §11.1 and Fig. 11.1"],
+      "narration": "VVC keeps the hybrid structure but sharpens almost every stage. Blocks can be as large as 128 by 128 and are split with a quad-tree plus binary and ternary splits, so rectangles are allowed. Intra prediction grows from 33 to 65 directions; inter prediction gains affine motion, decoder-side refinement, and more. Two stages matter here. The transform stage now has Multiple Transform Selection, M-T-S, which lets the encoder choose among three transform types in each direction, plus the Low-Frequency Non-Separable Transform, L-F-N-S-T, a second transform applied on top of the first one. And the in-loop filter chain now ends with the Adaptive Loop Filter, A-L-F, a trainable filter whose coefficients are chosen by the encoder and sent in the bitstream. These tools bring real compression gains, but they are expensive in hardware: more multiplications, larger kernels to store, and, for the ALF, large neighbourhoods of pixels to keep in memory. The thesis map shows exactly where the contributions land: the transform block, MTS and LFNST, for both the decoder and the encoder; and the ALF block, again for both sides."
+    },
+    {
+      "id": "05", "part": "B",
+      "title": "Why hardware? CPU, GPU, FPGA, ASIC",
+      "kicker": "The hardware side, part 1",
+      "points": [
+        "Live video must deliver every frame on time. With a limited number of CPU cores, software cannot reach the standard's best quality in real time.",
+        "<b>FPGA</b>: logic that can be reconfigured after manufacturing. Flexible, good for moderate volumes.",
+        "<b>ASIC</b>: a chip designed for one application and frozen at the factory. Longer and costlier to develop, best performance per watt (the thesis cites ~20× CPU performance at ~20× lower power).",
+        "A real-time encoder is judged on video quality, latency, <b>SWaP</b> (size, weight, power) and capability.",
+        "The partner's appliances go on backpacks, vehicles and drones: no fan, strict power budgets. Hence the obsession with area, memory and power."
+      ],
+      "figures": [
+        {"file": "fig_3_12.png", "caption": "Flexibility versus performance and power efficiency, from CPU to ASIC.", "source": "Thesis Fig. 3.12, p. 32"}
+      ],
+      "expert": "<p>The thesis cites a Xilinx study on live encoding showing that dedicated hardware (FPGA or ASIC) achieves higher quality at lower power than software for real-time video, and an MSU 2018 comparison in which software encoders reach high quality only far below real-time speed. The partner's internal study ranked seven commercial point-to-point encoders on objective quality, latency, SWaP and capability score (Fig. 3.14). Its previous-generation product is a fanless portable HEVC encoder with glass-to-glass latency of tens of milliseconds, used in broadcast and surveillance.</p>",
+      "sources": ["Thesis §3.5, pp. 31–35"],
+      "narration": "Why not just run VVC in software? For files encoded offline, you can. For live video, you cannot reach the standard's best quality in software, because you must deliver every frame on time, and the parallelism of a CPU is limited by its number of cores. So live, professional encoders use dedicated hardware. There are two families. An FPGA is a chip whose logic can be reconfigured after manufacturing; it is flexible, and good for moderate volumes. An ASIC is a chip designed for one application and frozen at the factory. It takes longer and costs more to develop, but it delivers the best performance per watt. The thesis cites the usual rule of thumb: an ASIC can offer around twenty times the performance of a CPU, at around twenty times lower power. For the partner's products, size, weight and power matter as much as quality. A portable encoder on a drone, in a vehicle, or in a backpack has a strict power budget and no fan. That is the context in which every design choice in the thesis is made. The question is never just 'does it work'. It is 'how small, how cool, how fast'."
+    },
+    {
+      "id": "06", "part": "B",
+      "title": "The contract: throughput, latency, clock, area, memory, power",
+      "kicker": "The hardware side, part 2",
+      "points": [
+        "<b>Decoder</b> target: 4K at 120 fps over two identical cores → each core 4K60, at <b>450 MHz</b>. <b>Encoder</b> target: 4K60 over four cores → each core 1080p60, with <b>9,000 cycles per 64×64 CTU</b>.",
+        "Throughput is written as <b>samples per clock cycle</b>: the 1-D transform must absorb 4 samples/cycle (2 for the folded 2-D transform); the ALF 2 pixels/cycle.",
+        "<b>Fixed latency</b>: every block size takes the same number of cycles (that of the largest block), so modules chain like a conveyor belt without stalls.",
+        "<b>Cost</b>: area in gates or µm² on TSMC 28 nm (Synopsys Design Compiler), memory in Kbit of RAM/ROM, power in mW at 0.8 V or 0.65 V and 85 °C.",
+        "Higher clock frequency → more cycles per block → more room for pipelining and sharing → smaller chip."
+      ],
+      "figures": [
+        {"calc": "budget", "caption": "The budget arithmetic behind '4 samples per cycle' and '2 pixels per cycle'.", "source": "Derived from thesis Tables 5.1, 6.1 and 9.1"}
+      ],
+      "expert": "<p>Cycle budgets per block for 4K60 4:2:0 at 450 MHz (Table 6.1): 64×64 → 1,238 cycles; 32×32 → 310; 16×16 → 78; 8×8 → 20; 4×4 → 5. Because zeroing removes three quarters of a 64×64 DCT-2 input, large blocks need fewer samples per cycle than small ones; the module is sized for the worst case. ALF budgets (Table 9.1, 4:2:2): CTU 128 → 16,384 cycles for 32,768 pixels, i.e. 2 pixels/cycle for every CTU size. The chip-level numbers in the thesis (4K60 per core for the transform, 4K30/4K60 per core for ALF) vary by chapter as the product targets evolved; the method is the same.</p>",
+      "sources": ["Thesis §5.1 and Table 5.1; §6.1 and Table 6.1; §9.1 and Table 9.1; §7.1 and §10.1 (encoder budgets)"],
+      "narration": "A hardware block is designed against a contract. Start with throughput. The decoder chip must handle 4K at 120 frames per second, split across two identical cores, so each core decodes 4K at 60. At the planned clock frequency of 450 megahertz, you can convert that into a budget: how many clock cycles are available to process each block of pixels. For a 64 by 64 transform block, the budget is about twelve hundred cycles; for a 4 by 4 block, only five. Expressed the other way, the one-dimensional transform must absorb about four samples every clock cycle, and the adaptive loop filter two pixels per cycle. The second term of the contract is latency. The chip is a conveyor belt of modules. If every block size took a different number of cycles, scheduling would be a nightmare. So each module promises a fixed latency, the same for all block sizes, usually the latency of the largest block. The third term is cost. Silicon area, measured in gates or in square micrometres on a 28 nanometre TSMC process. Memory, measured in kilobits of RAM and ROM. And power, in milliwatts, at a given supply voltage and temperature. Those three numbers, area, memory and power, are what the whole thesis tries to drive down."
+    },
+    {
+      "id": "07", "part": "B",
+      "title": "From the standard to silicon: the design flow",
+      "kicker": "The hardware side, part 3",
+      "points": [
+        "1. <b>Reference software</b> (the VVC Test Model, VTM, in C++) → extract the exact integer arithmetic of the tool → a bit-accurate software model.",
+        "2. <b>Architecture</b>: multipliers, memories, pipeline stages, control, chosen against the throughput/latency contract.",
+        "3. <b>VHDL</b>: describe registers, wires and logic that all run in parallel at every clock tick.",
+        "4. <b>Verification</b>: simulate (Riviera-PRO) and compare bit-for-bit with the model. Transform: 10⁵ pseudo-random vectors over all sizes and types. ALF: trace files dumped by the instrumented software encoder (SAO output → ALF), sequences from 64×64 to 1080p, 8/10/12 bits, all passing.",
+        "5. <b>Synthesis</b>: Synopsys Design Compiler maps the VHDL to TSMC 28 nm standard cells and reports area, timing at 450 MHz, and power. 6. <b>Integration</b> into the partner's chip."
+      ],
+      "figures": [
+        {"file": "fig_10_15.png", "caption": "A self-checking test bench: the hardware ALF must reproduce the software encoder's trace files exactly.", "source": "Thesis Fig. 10.15, p. 148"},
+        {"file": "fig_10_16.png", "caption": "The ALF decision test bench compares the chosen filter index against the software decision.", "source": "Thesis Fig. 10.16, p. 148"}
+      ],
+      "expert": "<p>Transform designs were validated against procedures from VTM 8–12; ALF against the latest working draft / VTM 10. Synthesis conditions reported for ALF: typical corner, 85 °C, 0.8 V (and 0.65 V for the low-power variant). The first MTS design was additionally mapped to an Intel Arria 10 FPGA (ALMs, registers, DSP blocks) to compare with FPGA-based prior work. Test-sequence categories for the encoder ALF: small (64×64, 128×128), corner resolutions (264–312 px by steps of 8), standard (720p, 1080p, 1920×544).</p>",
+      "sources": ["Thesis §5.4, §6.5.1, §9.6, §10.4.1 and Table 10.4"],
+      "narration": "How does an algorithm become a circuit? The standard comes with a reference software, the VVC Test Model, or VTM. Step one is to extract the exact integer arithmetic of the tool and write a bit-accurate software model of it. Step two is architecture: deciding how many multipliers, what memory, and what pipeline are needed to meet the throughput contract. Step three is writing the hardware itself in VHDL, a hardware description language in which you describe registers, wires and logic that all operate in parallel at every clock tick. Step four is verification. The VHDL is simulated and compared, bit for bit, with the software model. For the transform, the thesis used one hundred thousand pseudo-random input vectors covering every block size and transform type. For the ALF, the software encoder was instrumented to dump trace files of the pixels entering and leaving the filter, and the hardware had to reproduce them exactly, on sequences from 64 by 64 up to 1080p, in 8, 10 and 12 bits. Step five is synthesis: a tool such as Synopsys Design Compiler maps the VHDL onto the standard cells of a 28 nanometre process and reports area, timing at 450 megahertz, and power. Only then can designs be compared honestly. And finally, the block is integrated into the partner's chip."
+    },
+    {
+      "id": "08", "part": "B",
+      "title": "Three tricks every hardware designer uses",
+      "kicker": "The hardware side, part 4",
+      "points": [
+        "<b>Pipeline</b>: cut the work into stages separated by registers; a new piece of data enters every clock tick. Register <b>delay lines</b> pad fast paths so that all paths share one latency.",
+        "<b>Fold</b>: a 2-D transform = rows then columns. Build one 1-D core plus a <b>transpose memory</b> and pass the data through the same core twice. Half the logic, at the price of a memory and twice the core throughput.",
+        "<b>Share</b>: a 64-point DCT-2 contains the 32-point one (butterfly, even/odd recursion), so one set of multipliers serves every size; the 5×5 chroma filter and the cross-component filter fit inside the 7×7 luma diamond, so one filter engine serves all three.",
+        "Coefficients live in a <b>ROM</b>; a coefficient-preparation module fetches the right rows and feeds <b>pools</b> of multipliers."
+      ],
+      "figures": [
+        {"file": "fig_5_1.png", "caption": "The folded 2-D transform: one 1-D core and a transpose memory.", "source": "Thesis Fig. 5.1, p. 53"}
+      ],
+      "expert": "<p>Folding doubles the required throughput of the 1-D core: a 2-D rate of 1 sample/cycle needs a 1-D core at 2 samples/cycle (Ch. 5), and 2 samples/cycle in 2-D needs 4 in 1-D (Ch. 6). The transpose buffer must hold a 64×64 luma block plus two 32×32 chroma blocks. Fixed latency is implemented with register delay lines sized to the largest block; when more work is done per cycle these delay lines shrink, which is why doubling the multipliers raised the MTS area by only 55 % (Table 6.8).</p>",
+      "sources": ["Thesis §5.1, §5.3, §6.4, §9.5"],
+      "narration": "Three ideas come back in every chapter. First, pipelining. Instead of computing a block in one long step, the work is cut into stages separated by registers, so that at each clock tick a new piece of data enters while the older pieces advance. A delay line of registers can also pad a fast path so that every path has the same latency. Second, folding. A two-dimensional transform is two one-dimensional transforms, rows then columns. Rather than building both, the thesis builds one 1-D core and a transpose memory: the rows go through the core, the results are stored, then read out column-wise and sent through the same core again. Half the logic, at the price of a memory and twice the throughput requirement on the core. Third, sharing. Large transforms contain smaller ones: a 64-point DCT-2 decomposes into even and odd halves recursively, so one set of multipliers can serve every size. Likewise, the 5 by 5 chroma filter and the cross-component filter fit inside the 7 by 7 luma diamond, so one filter engine serves all three. Keep these three in mind: pipeline, fold, share. Most of the area savings in this thesis come from using them well."
+    },
+    {
+      "id": "09", "part": "C",
+      "title": "MTS: three transforms, five combinations",
+      "kicker": "Transform background",
+      "points": [
+        "A transform packs the residual's energy into few low-frequency coefficients. HEVC: DCT-2 (+ DST-7 for 4×4 intra). VVC MTS: <b>DCT-2, DST-7, DCT-8</b> per direction, 5 allowed combinations, luma only.",
+        "Sizes: DCT-2 up to <b>64×64</b>; DST-7/DCT-8 up to 32×32. Integer kernels scaled by 64·√N: no floating point, bit-exact hardware.",
+        "<b>Butterfly</b>: an N-point DCT-2 = even part (the N/2-point DCT-2) + odd part. Sizes nest.",
+        "<b>DCT-8 = DST-7</b> with reversed input order and flipped output signs: one kernel serves both.",
+        "<b>Zeroing</b>: the high-frequency half of 64-point DCT-2 and 32-point DST-7/DCT-8 coefficients is defined as zero, so a 64-point inverse transform has only 32 non-zero inputs."
+      ],
+      "figures": [
+        {"file": "fig_4_4.png", "caption": "The encoder's choice of horizontal and vertical transforms, signalled by the MTS index.", "source": "Thesis Fig. 4.4, p. 44"},
+        {"file": "fig_4_5.png", "caption": "Zeroing: only the low-frequency part (white) of large blocks is transformed.", "source": "Thesis Fig. 4.5, p. 46"}
+      ],
+      "expert": "<p>Separable 2-D transform Y = T<sub>V</sub>·X·T<sub>H</sub><sup>T</sup>; inverse X̃ = T<sub>V</sub><sup>T</sup>·Ỹ·T<sub>H</sub>. Effective sizes N' = min(N,16) for DST-7/DCT-8 and min(N,32) for DCT-2. DST-7 kernels show three structural features (repeated segments, unique values, linear relations such as l = a + j) that compact storage. Coding effect under CTC (VTM 8): disabling MTS costs 1.32 % / 0.75 % / 0.53 % BD-rate in AI / RA / LD-B; encoder time drops 15 % (fewer candidates searched), decoder time only 1 %.</p>",
+      "sources": ["Thesis §4.2, pp. 40–45", "Thesis Table 6.7 (coding gain)", "Zhao et al., 'Transform coding in the VVC standard', IEEE TCSVT 2021"],
+      "narration": "Now, the transform. A transform turns a block of residual pixels into frequency coefficients, packing most of the energy into the top-left corner, so that the rest can be quantized away. HEVC used a single transform, the DCT type 2, plus a small DST type 7 for 4 by 4 intra blocks. VVC's Multiple Transform Selection lets the encoder pick, for luma blocks, among DCT-2, DST-7 and DCT-8 in each direction, with five allowed combinations. DCT-2 goes up to 64 by 64; the others up to 32 by 32. Three properties make this tractable in hardware. First, DCT-2 has the butterfly property: a 64-point transform splits into an even and an odd part, and the even part is simply the 32-point transform, recursively. Second, DCT-8 is DST-7 with the input order reversed and the output signs flipped, so one kernel serves both. Third, zeroing: for the largest sizes, the high-frequency half of the coefficients is defined to be zero, so a 64-point inverse transform has only 32 non-zero inputs. All kernels are integers, scaled so that there are no floating-point operations, which is essential for bit-exact hardware."
+    },
+    {
+      "id": "10", "part": "C",
+      "title": "LFNST: a second transform on the low frequencies",
+      "kicker": "Transform background",
+      "points": [
+        "Applied <b>after DCT-2 only</b>, on the top-left corner of the block: the encoder transforms the 8×8 corner, the decoder's inverse works on the 4×4 corner.",
+        "<b>Non-separable</b>: one matrix multiplication on the coefficients rearranged as a vector, not rows-then-columns.",
+        "<b>4 transform sets</b> (selected by the intra prediction mode) × <b>2 kernels</b> each (index signalled per CU); kernel sizes 16×16 and 48×16.",
+        "Decoder: 8 or 16 inputs → 16 or 48 outputs depending on block size, then on to the inverse MTS.",
+        "Hardware consequences: 8 kernels to store, a remap into scan order, an extra pipeline stage. No hardware LFNST existed in the literature before this thesis."
+      ],
+      "figures": [
+        {"file": "fig_4_7.png", "caption": "LFNST input/output sizes at the encoder (forward) and the decoder (inverse).", "source": "Thesis Fig. 4.7, p. 48"},
+        {"file": "fig_4_6.png", "caption": "Where LFNST sits: between the primary transform and quantisation.", "source": "Thesis Fig. 4.6, p. 47"}
+      ],
+      "expert": "<p>Z = T·Y at the encoder, Ỹ = T<sup>T</sup>·Z̃ at the decoder. Set index from the intra mode: planar/DC → set 0, angular ranges → sets 1–3, CCLM chroma modes → set 0 (Table 4.2). Input vectorisation differs: raster scan at the decoder, zig-zag at the encoder. Coding effect (VTM 8, CTC): disabling LFNST costs 0.99 % (Y) / 1.98 % (U) / 2.21 % (V) in AI and 0.70 % in RA; encoder time actually rises 10 % without it because early-termination heuristics work better with LFNST on.</p>",
+      "sources": ["Thesis §4.3, pp. 45–48", "Koo et al., 'Low Frequency Non-Separable Transform (LFNST)', PCS 2019"],
+      "narration": "The Low-Frequency Non-Separable Transform is new in VVC. After the primary DCT-2, and only when DCT-2 was used, the encoder can apply a second transform to the top-left, low-frequency corner of the block. Non-separable means that it is a single matrix multiplication on the coefficients rearranged into a vector, not a rows-then-columns operation. VVC defines four transform sets, selected by the intra prediction mode, each with two kernels; the encoder signals which kernel it used. At the decoder, the inverse LFNST takes 8 or 16 input coefficients and produces 16 or 48 output coefficients, depending on the block size, and then hands them to the inverse MTS. In hardware this means eight kernels to store, a remapping of coefficients into the scan order, and an extra stage of latency in the transform chain. When this thesis started, no hardware implementation of LFNST existed in the literature. The gain is real: switching LFNST off costs about one percent of bit rate in intra coding on luma, and about two percent on chroma."
+    },
+    {
+      "id": "11", "part": "C",
+      "title": "Design 1: multiplier-less, or real multipliers?",
+      "kicker": "Chapter 5 · ICASSP 2020",
+      "points": [
+        "Target: 1-D inverse MTS, <b>2 samples/cycle</b>, fixed latency, 450 MHz, all types and all sizes 4–64 including asymmetric blocks.",
+        "<b>Constant-multiplier (CM)</b> design: each constant becomes shifts and adds; one module per size and type (64-point DCT-2 with butterfly; 4/8/16/32-point DST-7 with DCT-8 by flipping).",
+        "<b>Regular-multiplier (RM)</b> design: <b>32 shared multipliers</b>, a ROM of the 1,872 coefficients (17,408 bits, 9 regions), a coefficient-preparation module, two pools of 16.",
+        "Result on TSMC 28 nm: RM <b>96,849</b> vs CM <b>266,315</b> cell area: <b>−63 %</b>. On an Arria 10 FPGA: 9,723 vs 51,182 ALMs.",
+        "Lesson: with many transform types and sizes, sharing real multipliers beats hard-wired constants. The engine is multi-standard (AVC, HEVC, VVC)."
+      ],
+      "figures": [
+        {"chart": "cmVsRm", "caption": "Same function, same throughput, two architectures.", "source": "Thesis Table 5.4"},
+        {"file": "fig_5_8.png", "caption": "The RM-based inverse MTS: ROM, coefficient preparation, multiplier module.", "source": "Thesis Fig. 5.8, p. 61"}
+      ],
+      "expert": "<p>Thirty-two is the number of multiplications needed per cycle for the odd part of the 64-point DCT-2 and for 32-point DST-7/DCT-8 at 2 outputs/cycle; for these large blocks zeroing lets the input run at 1 sample/cycle. ROM: 32 coefficients × 8 bits per column, 68 columns (the 16×16 odd part of the 32-point DCT-2 is duplicated to keep one access per 2 samples), 7-bit address. Compared with prior art: −80.5 % area vs Fan et al. (65 nm, DCT-2/8 and DST-7 up to 32) and −76.7 % vs Mert et al. (90 nm, sizes 4 and 8); −92.7 % ALMs vs Kammoun et al. on FPGA. No earlier design supported the 64-point DCT-2 (Table 5.5).</p>",
+      "sources": ["Thesis Ch. 5, pp. 51–65; Tables 5.4–5.5", "Farhat et al., 'Lightweight hardware implementation of VVC transform block for ASIC decoder', ICASSP 2020"],
+      "narration": "The first design question sounds like a detail, and it turned out to reverse conventional wisdom. Since the transform is a matrix multiplication with fixed coefficients, the classic hardware trick is to avoid multipliers altogether: each constant multiplication becomes a few shifts and additions. For HEVC's single DCT-2, that was clearly the cheapest way. The thesis built both options for the VVC inverse MTS: a decoder core at 450 megahertz, two samples per cycle. The constant-multiplier version needs a separate block per transform size and type: a 64-point DCT-2 with its butterfly, plus 4, 8, 16 and 32-point DST-7 blocks, with the DCT-8 derived by flipping. The regular-multiplier version is one shared engine: thirty-two real multipliers, a read-only memory holding the eighteen hundred and seventy-two coefficients, about seventeen kilobits, and a coefficient-preparation module that fetches the right rows and spreads them over two pools of sixteen. The result: about ninety-seven thousand units of cell area for the regular-multiplier design, against two hundred and sixty-six thousand for the constant-multiplier one. Sixty-three percent less. On an Arria 10 FPGA the ratio was similar. The lesson: once a standard has many transform types and sizes, sharing real multipliers beats hard-wired constants."
+    },
+    {
+      "id": "12", "part": "C",
+      "title": "Design 2: four samples per cycle, with LFNST",
+      "kicker": "Chapter 6 · IEEE TCE 2021",
+      "points": [
+        "New target: 4K60 per core → 1-D transform at <b>4 samples/cycle</b>. The RM architecture scales: 32 → <b>64 multipliers</b> in four pools, ROM 17,920 bits (35 × 512-bit words), same structure; area <b>138.9 Kgates</b> (+55 % for 2× throughput, because delay lines shrink).",
+        "<b>Inverse LFNST</b> added as its own block: remap (block → vector, 4 cycles) → core (ROM of all 8 kernels = 65,536 bits, coefficient preparation, 64 multipliers in four pools, accumulation) → scan (vector → 4×4 or 8×8 block). <b>109.2 Kgates</b>.",
+        "A <b>bypass delay line</b> gives the LFNST path and the no-LFNST path the same latency L1; control units route by transform type and direction.",
+        "Unified transform: <b>128 multipliers</b>, 4 samples/cycle, fixed latency for every block size; integrated in the partner's multi-standard decoder.",
+        "First hardware LFNST published."
+      ],
+      "figures": [
+        {"file": "fig_6_12.png", "caption": "The unified inverse LFNST + MTS design with its two control units.", "source": "Thesis Fig. 6.12, p. 78"},
+        {"file": "fig_6_4.png", "caption": "The inverse LFNST block: remap, core, scan.", "source": "Thesis Fig. 6.4, p. 72"}
+      ],
+      "expert": "<p>Input rates adapt per block size so that the output holds 4 samples/cycle: 4×4 → 2 inputs/cycle (32 multipliers busy); 8×8 → 1 input per 3 cycles; M×N with M,N &gt; 8 → 2 inputs per 3 cycles; 4×N → 4 inputs/cycle with all 64 multipliers (Table 6.5). The LFNST ROM stores kernels already in scan order, which removes a kernel-remap module; 128 words × 512 bits. Going from 2 to 4 samples/cycle cost +46.5 % area for LFNST and +55 % for MTS (Tables 6.8–6.9). Bit-exact against VTM 12 procedures over 10⁵ vectors per module.</p>",
+      "sources": ["Thesis Ch. 6, pp. 67–83; Tables 6.3–6.9", "Farhat et al., 'Lightweight Hardware Transform Design for the VVC 4K ASIC Decoders', IEEE TCE 67(4), 2021"],
+      "narration": "The chip target then moved to 4K at 60 frames per second per core, doubling the throughput. The regular-multiplier architecture proved scalable. The inverse MTS went from 32 to 64 multipliers, in four pools, with a wider ROM, and kept the same structure. Its area rose by 55 percent rather than 100, because the delay lines that equalise latency shrink when more work is done per cycle. Then the inverse LFNST was added as its own block, with the same philosophy: a remap module turning the input block into a vector; a core with a ROM holding all eight kernels, sixty-four kilobits, a coefficient-preparation module, and 64 multipliers in four pools; then a scan module mapping the vector back to a 4 by 4 or 8 by 8 block. A bypass path with a register delay line gives the LFNST path and the no-LFNST path the same latency, so the downstream MTS never notices the difference. Together, the unified transform uses 128 multipliers, sustains four samples per cycle with a fixed latency for every block size, and was integrated in the partner's multi-standard decoder. It was the first hardware LFNST ever published."
+    },
+    {
+      "id": "13", "part": "C",
+      "title": "The bill: VVC versus HEVC transform",
+      "kicker": "Chapter 6, section 6.5.4",
+      "points": [
+        "Two 1-D designs at the same throughput (2 samples/cycle), 450 MHz, 28 nm, each with the architecture that is optimal for it.",
+        "HEVC transform (DCT-2 + 4-point DST-7, constant multipliers): <b>41,500 gates</b>.",
+        "VVC separable transform (MTS, regular multipliers): <b>89,082 gates</b>, about <b>2×</b>: the 64-point size and two new types.",
+        "VVC full transform (MTS + LFNST): <b>163,672 gates</b>, about <b>4×</b> HEVC. 'Reasonable, rather good, given the new tools and sizes.'",
+        "Perspective: the transform tools buy ~1–2 % of bit rate; VVC's 40–50 % comes from the sum of all its tools."
+      ],
+      "figures": [
+        {"chart": "vvcVsHevc", "caption": "What the VVC transform costs next to HEVC's, at equal throughput.", "source": "Thesis Tables 6.10 and 6.11"}
+      ],
+      "expert": "<p>The comparison is fair because each side uses its best-known architecture: CM for HEVC (established in the literature as the most area-efficient for a single DCT-2 family) and RM for VVC (shown in Chapter 5 to be better for many types and sizes). At 2 samples/cycle the VVC blocks are: MTS 89,082 gates (32 RM), LFNST 74,592 gates (32 RM). In software, MTS and LFNST change VTM decoding time by only ±1–5 %; in hardware the module must be sized for every size and type regardless of how often they occur.</p>",
+      "sources": ["Thesis §6.5.4, Tables 6.10–6.11", "Thesis Table 6.7"],
+      "narration": "What does VVC's transform cost, compared with HEVC's? The thesis synthesised two one-dimensional designs with the same throughput of two samples per cycle. The HEVC transform, DCT-2 plus the 4-point DST-7, built with constant multipliers, which is optimal for it, comes to about forty-one and a half thousand gates. The VVC separable transform alone, MTS with regular multipliers, is eighty-nine thousand gates: roughly double, because of the 64-point size and the two extra transform types. Add the LFNST, and the full VVC transform is about one hundred and sixty-four thousand gates: four times HEVC. The thesis calls this reasonable, given the new tools, and it is exactly the kind of number a product team needs before committing to a chip. It also puts the compression gains in perspective. The transform tools buy around one to two percent of bit rate, for a four-fold transform block. The real justification is the sum of all VVC tools together."
+    },
+    {
+      "id": "14", "part": "C",
+      "title": "The encoder side: eight candidates per block, shared cores",
+      "kicker": "Chapter 7",
+      "points": [
+        "The decoder applies the one transform the bitstream names. The encoder must <b>try candidates</b>: transform skip, DCT-2, DCT-2 + LFNST kernel 0, DCT-2 + LFNST kernel 1, and the four MTS combinations: <b>8 transform chains</b> (forward transform → Q → inverse Q → inverse transform) for intra frames, 7 for inter.",
+        "Budget: 4 cores × 1080p60 at 450 MHz, <b>9,000 cycles per 64×64 CTU</b>, partition search limited to one binary split. Counting every block, component and candidate: ≈<b>95 samples/cycle</b> (intra) and ≈83 (inter).",
+        "Too wide for one bus → <b>three transform chains of 32 samples/cycle</b>, with the intra-only DCT-2 chain sharing resources with an inter chain.",
+        "Sharing study A: forward DCT-2 with LFNST → 1,024 multipliers (512 without 64-point), cost dominated by DCT-2. Study B: forward DCT-2 with its own inverse, using the symmetric odd kernels → 1,536 constant multipliers (504 without 64-point) plus 416 multiplexers, balanced.",
+        "Adopted in the real encoder: <b>DCT-2 shared with its inverse</b>, LFNST kept as an independent core."
+      ],
+      "figures": [
+        {"file": "fig_7_2.png", "caption": "Three transform chains of 32 samples per cycle for intra and inter frames.", "source": "Thesis Fig. 7.2, p. 88"},
+        {"file": "fig_7_9.png", "caption": "A unified N-point DCT/iDCT circuit: butterfly, shared core multiplication, add/sub.", "source": "Thesis Fig. 7.9, p. 94"}
+      ],
+      "expert": "<p>Tables 7.1–7.2 count, for each CU size from 64×64 to 4×4 (with one BT split), luma and 4:2:2 chroma blocks times RD candidates: 851,968 samples per intra CTU → 94.66 samples/cycle; 745,472 per inter CTU → 82.83. In the shared DCT/iDCT design the odd kernels are symmetric (O<sub>N/2</sub><sup>T</sup> = O<sub>N/2</sub>) and the final even block C<sub>2</sub> is its own transpose, so the multiplication circuits are reused for both directions; circuits are duplicated 32/N times for N &lt; 32 to hold 32 samples/cycle (Table 7.5). The LFNST uses far fewer multiplications than DCT-2 for large blocks, which is why sharing it with DCT-2 brings nothing.</p>",
+      "sources": ["Thesis Ch. 7, pp. 85–99; Tables 7.1–7.7"],
+      "narration": "The encoder is a different animal. The decoder applies one transform per block, as told by the bitstream. The encoder must try candidates and keep the one with the best rate-distortion cost. For each block, it tests transform skip, DCT-2, DCT-2 with each of the two LFNST kernels, and four MTS combinations: eight transform chains, each a forward transform, a quantization, an inverse quantization and an inverse transform. The partner's encoder runs 4K60 over four cores, each core handling 1080p60 with a fixed budget of nine thousand clock cycles per 64 by 64 coding tree unit, and the partitioning search is limited to one binary split. Counting all blocks and all candidates, the transform loop must absorb about 95 samples per cycle for intra frames, and 83 for inter frames. That is too wide for one bus, so the work is split over three transform chains of 32 samples per cycle each. The chapter then studies where to share hardware. Sharing the forward DCT-2 with the LFNST looked attractive, but the DCT-2 dominates the cost: about a thousand multipliers. Sharing the forward DCT-2 with its own inverse, using the symmetry of the odd kernels, halves the multiplications at the price of some multiplexers. That option, DCT and inverse DCT shared, LFNST kept separate, is what the real encoder adopted."
+    },
+    {
+      "id": "15", "part": "D",
+      "title": "ALF: a filter that learns its coefficients",
+      "kicker": "Chapter 8 · ALF background",
+      "points": [
+        "In-loop chain: LMCS → deblocking (block edges) → SAO (ringing) → <b>ALF</b>: a <b>Wiener filter</b> whose coefficients minimise the squared error between reconstruction and original; the encoder sends them in an <b>APS</b>.",
+        "Luma: <b>7×7 diamond</b>, point-symmetric → only <b>12 unique coefficients</b> (half the multiplications). Each 4×4 block is classified into one of <b>25 classes</b> from sub-sampled Laplacian gradients (directionality D, activity A), and the kernel is rotated or flipped to match.",
+        "Chroma: <b>5×5 diamond</b> (6 coefficients) + <b>cross-component ALF</b> (3×4, 7 coefficients) that refines chroma from co-located luma.",
+        "<b>Virtual boundaries</b> (4 luma / 2 chroma lines above CTU edges) limit line buffers; samples beyond them are padded symmetrically.",
+        "Worth it: switching ALF off costs +2.2 % (Y) and +12.8 % (U) bit rate in intra coding; ALF is ~24–31 % of VTM decoding time, second only to motion compensation."
+      ],
+      "figures": [
+        {"file": "fig_8_5.png", "caption": "The luma 7×7 and chroma 5×5 diamond filters; symmetric taps share a coefficient.", "source": "Thesis Fig. 8.5, p. 110"},
+        {"file": "fig_9_12.png", "caption": "Where VTM decoding time goes: ALF is the second largest tool.", "source": "Thesis Fig. 9.12, p. 131"}
+      ],
+      "expert": "<p>Class C = 5·D + Â with D ∈ [0,4] from the ratios of max/min horizontal–vertical and diagonal gradient sums against thresholds t1, t2, and Â the quantised activity. Fixed luma filters: AlfFixFiltCoeff (64 × 12) indexed through AlfClassToFiltMap (16 sets × 25 classes, set index signalled in the slice header); alternatively up to 25 luma filter sets and 8 chroma sets per APS, with clipping values. Filtering: R'(i,j) = R(i,j) + ((Σ f(k,l)·clip(R(i+k,j+l) − R(i,j), c(k,l)) + 64) ≫ 7). Coding effect (VTM 10): ALF off = +2.20/12.81/12.43 % (Y/U/V) in AI, +4.34/19.31/19.06 % in RA; CC-ALF off = +9.69/8.55 % on U/V in AI.</p>",
+      "sources": ["Thesis Ch. 8, pp. 103–113", "Thesis Table 9.7 and Fig. 9.12", "Karczewicz et al., 'VVC in-loop filters', IEEE TCSVT 2021"],
+      "narration": "Now the second family of tools. After prediction and transform, the reconstructed picture still shows blocking at block edges and ringing around sharp edges. VVC cleans it with a chain of in-loop filters: luma mapping, the deblocking filter, sample adaptive offset, and finally the Adaptive Loop Filter. The ALF is a Wiener filter: the encoder computes coefficients that minimise the squared error between the reconstruction and the original, and sends them in an adaptation parameter set. For luma, the filter is a 7 by 7 diamond. Thanks to its point symmetry it needs only twelve unique coefficients, which halves the multiplications. Every 4 by 4 luma block is classified into one of twenty-five classes using gradients in four directions, its directionality and its activity, and the kernel is rotated or flipped to match the block's orientation, so that one filter adapts to many textures. Chroma uses a 5 by 5 diamond with six coefficients, plus the cross-component ALF, which refines each chroma sample from the co-located luma samples. Each filtered sample needs its neighbours up to three pixels away, and that neighbourhood is the hardware problem. The tool is worth it: switching ALF off costs two percent of bit rate on luma and over twelve percent on chroma in intra coding, and the ALF is the second most expensive tool in the software decoder, after motion compensation."
+    },
+    {
+      "id": "16", "part": "D",
+      "title": "ALF decoder: the memory problem and the scanning order",
+      "kicker": "Chapter 9 · IEEE TCE 2022, part 1",
+      "points": [
+        "To filter one 4×4 block, ALF needs its <b>8 neighbours</b> (top-left … bottom-right), and for chroma the <b>co-located luma</b> for CC-ALF. In a raster-scanned decoder, lines of blocks must wait in memory for their neighbours.",
+        "Three feeding orders studied for a 128×128 CTU (4:2:2, 10-bit): <b>A</b> luma first → the whole luma CTB must be kept for CC-ALF: 193.28 Kbit. <b>B</b> chroma first → filtered chroma parked until luma arrives: 213.12 Kbit. <b>C</b> interleave <b>Cr, Cb, Y, Y</b> within each CTU line → only two lines and two columns of blocks per component: <b>50.56 Kbit, −75 %</b>.",
+        "Second problem: a 4×4 block (16 pixels) at 2 pixels/cycle is an <b>8-cycle window</b>, but gathering 8 neighbours and writing the result is 9 memory operations.",
+        "Fix: consecutive blocks share <b>6 of 9</b> neighbours, so the second block needs only 3 operations → 12 operations per pair inside a 16-cycle window.",
+        "Two RAMs: RAM_16 serves one 4×4 block per cycle (160-bit port); RAM_4 keeps a one-sample column for CC-ALF (40-bit port)."
+      ],
+      "figures": [
+        {"chart": "memoryScenarios", "caption": "Memory needed by each scanning scenario.", "source": "Thesis Table 9.6"},
+        {"file": "fig_9_6.png", "caption": "The proposed interleaved scanning for a 32×32 CTU (4:2:0), and the input/output block sequence over time.", "source": "Thesis Fig. 9.6, p. 125"},
+        {"file": "fig_9_9.png", "caption": "Two consecutive blocks on the same line share six neighbours.", "source": "Thesis Fig. 9.9, p. 128"}
+      ],
+      "expert": "<p>Scenario C storage (Table 9.5): luma lines 120×8 (9.6 Kbit) + luma columns 128×8 (10.24) + chroma lines 2×(56×8) (8.96) + chroma columns 2×(128×8) (20.48) + CC-ALF column 128×1 (1.28) = 50.56 Kbit for 4:2:2; 35.84 Kbit for 4:2:0. The ALF actually filters a version of the CTB shifted by the virtual boundary; for 4:2:2 the chroma line just below the VB gets the 5×5 DSF but not CC-ALF (its co-located luma is not yet available), consistent with JVET contributions on the CC-ALF line-buffer problem. The last column of a CTB is filtered only when the first column of the next CTB arrives, hence the stored columns.</p>",
+      "sources": ["Thesis §9.3–9.4, pp. 118–128; Tables 9.3–9.6", "Farhat et al., 'Adaptive Loop Filter Hardware Design for 4K ASIC VVC Decoders', IEEE TCE 68(2), 2022"],
+      "narration": "To filter one 4 by 4 block, the ALF needs its eight surrounding blocks, and for chroma it also needs the co-located luma. In a raster-scanned decoder, blocks arrive one after another, so you must keep lines of blocks in memory until their neighbours exist. Memory is the most expensive part of this design, so the thesis studied the order in which luma and chroma blocks are fed to the filter. Scenario A, filter the whole luma block first and then the chroma, needs to store the entire 128 by 128 luma block for the cross-component filter: one hundred and ninety-three kilobits. Scenario B, chroma first, must park the filtered chroma until the luma arrives: two hundred and thirteen kilobits. Scenario C interleaves them within each coding tree unit line: one Cr block, one Cb block, then two luma blocks. Now the co-located luma for the cross-component filter is always already in the pipeline, and only two lines and two columns of blocks per component are kept: fifty and a half kilobits, seventy-five percent less. There is a second problem. A 4 by 4 block has sixteen pixels; at two pixels per cycle, that is an eight-cycle window. Yet gathering eight neighbours and writing the result takes nine memory operations. The fix is to notice that consecutive blocks share six of their nine neighbours, so the second block needs only three operations: twelve operations per pair, inside a sixteen-cycle window."
+    },
+    {
+      "id": "17", "part": "D",
+      "title": "ALF decoder: one engine for three filters, and the numbers",
+      "kicker": "Chapter 9 · IEEE TCE 2022, part 2",
+      "points": [
+        "Unified core, 3 pipeline stages: <b>S1</b> select the pixels for the two positions being filtered → <b>S2</b> clip and add the symmetric pairs → <b>S3</b> multiply with <b>26 regular multipliers</b> (2 pixels/cycle) and accumulate. One 4×4 block out every 8 cycles, fixed latency for all CTU sizes (16 to 128).",
+        "<b>Gradient module</b>: Laplacian sums → class (0–24) → coefficients from a ROM of the 64 fixed filters (6,144 bits) or from the APS → geometric transpose (rotation / flips). Bypassed for chroma.",
+        "Three small control units route colour components, APS enables, and coefficient/clip values.",
+        "Synthesis at 450 MHz, 28 nm: <b>66,997 µm²</b> (memory access 48 %, filter 29 %, gradient 23 %), <b>50.56 Kbit RAM</b>; power <b>9.58 mW</b> at 0.8 V, or 6.69 mW at 0.65 V for +12 % area.",
+        "Versus the transform blocks at 2 pixels/cycle: ALF 26 multipliers / 67.0 K, iMTS 32 / 89.1 K, iLFNST 32 / 74.6 K, but ALF is the one that needs memory. Decodes 4K60 in 4:2:2 and 4:2:0; integrated in the AVC/HEVC/VVC decoder chip. First complete ALF hardware (filters + memory + gradients)."
+      ],
+      "figures": [
+        {"file": "fig_9_1.png", "caption": "The ALF architecture: memory access, gradient and filter modules, and three control units.", "source": "Thesis Fig. 9.1, p. 118"},
+        {"file": "fig_9_11.png", "caption": "The filter module's three stages; the multiplier stage holds the 26 multipliers.", "source": "Thesis Fig. 9.11, p. 130"}
+      ],
+      "expert": "<p>Prior ALF hardware (Du et al., Conceição et al., Rediess et al., Wang et al.) targeted the HEVC-era ALF (9×9 filters) or FPGA, and did not treat memory or gradient computation; this design is the first for the final VVC ALF with CC-ALF and 4:2:2 support (Table 9.11). Sub-module areas (Table 9.8): memory access 30,758 µm² (20,281 non-combinational), gradient 14,767, filter 18,025. Alternative figures in the chapter report 47.36 Kbit of RAM split as 46.08 Kbit for the 7×7/5×5 filters and 1.28 Kbit for CC-ALF.</p>",
+      "sources": ["Thesis §9.5–9.7, pp. 128–134; Tables 9.8–9.11"],
+      "narration": "With the memory solved, the core is a unified filter engine. The 5 by 5 chroma diamond and the 3 by 4 cross-component filter both fit inside the 7 by 7 luma diamond, so one pipelined datapath serves all three. A first stage selects the pixels for the two positions being filtered; a second stage clips and adds the symmetric pairs; and a third stage multiplies with twenty-six regular multipliers, two pixels per cycle, then accumulates. A gradient module computes the four sub-sampled Laplacian sums, derives the class, fetches the luma coefficients either from a ROM of the sixty-four fixed filters or from the adaptation parameter set, and applies the geometric transpose. Three small control units route components and coefficients. Synthesised at 450 megahertz on 28 nanometres, the ALF occupies about sixty-seven thousand square micrometres, with fifty and a half kilobits of RAM; the memory module alone is 48 percent of the area. Power is 9.6 milliwatts at 0.8 volts, or 6.7 milliwatts at 0.65 volts, for 12 percent more area. Compared with the transform blocks at the same throughput, the ALF uses fewer multipliers and 11 to 24 percent less area, but it is the one that needs memory. The block decodes 4K at 60 frames per second in 4:2:2 and 4:2:0, and sits in the partner's decoder chip for AVC, HEVC and VVC."
+    },
+    {
+      "id": "18", "part": "D",
+      "title": "ALF encoder: filtering plus a decision",
+      "kicker": "Chapter 10 · PCS 2022",
+      "points": [
+        "Budget: <b>9,000 cycles per 64×64 CTU</b> on each of four 1080p60 cores. Two phases of 4,096 pixels each → <b>decision at 1 pixel/cycle</b>, <b>filtering at 2 pixels/cycle</b> (to leave a safety margin).",
+        "Engineering choices after studying the algorithm: ALF for <b>luma only</b>, <b>CTU 64 only</b>, and a decision among <b>4 of the 16 fixed filter sets</b>, their indices chosen by control software from picture type and QP.",
+        "<b>Decision module</b>: memory + handler → gradient module with 4 ROM/transpose copies → <b>4 parallel 7×7 filters</b> (12 multipliers each) → <b>SSD</b> of each filtered result and of the unfiltered block against the source, plus a λ-weighted cost → best index, or bypass. Works on the inner <b>60×60</b> region so it never waits for neighbouring CTUs; keeps a 2048×4 line buffer. <b>58,628 µm²</b>, 101.6 Kbit RAM, 48 multipliers, 17.9 mW.",
+        "<b>Luma filter module</b>: 24 multipliers at 2 pixels/cycle, 12.3 Kbit RAM, <b>41,984 µm²</b>, 13.6 mW (9.2 mW at 0.65 V).",
+        "Encoder ALF ≈ +33 % area versus the decoder ALF and 3× the multipliers: 'very efficient in resources and development complexity'. First ALF-encoder hardware study; integrated in the real-time encoder."
+      ],
+      "figures": [
+        {"file": "fig_10_9.png", "caption": "The ALF decision engine: four luma filters in parallel, then a sum-of-squared-differences comparison.", "source": "Thesis Fig. 10.9, p. 143"},
+        {"file": "fig_10_1.png", "caption": "Two phases, one cycle budget.", "source": "Thesis Fig. 10.1, p. 136"}
+      ],
+      "expert": "<p>Source blocks are scanned one CTU line behind the reconstructed blocks (two REC 4×4 blocks and one SRC block every 16 cycles) so that source pixels feed the SSD directly and are never stored (Fig. 10.11). Decision memory (Table 10.3): line buffer 2048×4 px + CTB lines = 101.568 Kbit at 12 bits. The filter module's memory handler reuses six shared neighbour blocks held in 1,152 bits of registers to fit 12 memory operations into a 16-cycle window. Area split of the decision (Table 10.7): four DSFs 52 %, gradient 22.5 %, memory 19.7 %, SSD 5.4 %.</p>",
+      "sources": ["Thesis Ch. 10, pp. 135–152; Tables 10.1–10.9", "Farhat et al., 'Efficient HW Design of Adaptive Loop Filter for 4K ASIC VVC Encoder', PCS 2022"],
+      "narration": "On the encoder side, the ALF must do two things: decide which filter to use, then filter. The partner's encoder gives every 64 by 64 coding tree unit nine thousand cycles for all of its loop filtering, so both phases must process about one pixel per cycle each. A full ALF encoder would be prohibitive, so the thesis made engineering choices after studying the algorithm: apply the ALF only to luma, only for 64 by 64 units, and let the decision test four of the sixteen fixed filter sets, chosen by control software from the picture type and the quantization parameter. The decision module runs at one pixel per cycle. A gradient module classifies each block and retrieves four candidate kernels; four 7 by 7 filter engines with twelve multipliers each filter the block in parallel; and a sum-of-squared-differences module compares each filtered result, and the unfiltered block, against the source, adds a lambda-weighted rate term, and picks the cheapest. It evaluates only the inner 60 by 60 region, so it never waits for neighbouring units, and it keeps a line buffer of four pixel rows across the 2K-wide picture. The filtering module then applies the chosen filter at two pixels per cycle, with 24 multipliers. Together, the encoder ALF costs about a third more area than the decoder ALF, and three times the multipliers, which the thesis judges a very efficient trade-off. It was the first ALF encoder hardware study, and it was integrated in the real-time encoder."
+    },
+    {
+      "id": "19", "part": "E",
+      "title": "The scoreboard",
+      "kicker": "Every design on one page",
+      "points": [
+        "All designs: VHDL, 450 MHz on TSMC 28 nm, fixed latency, bit-exact against the reference software, integrated in the industrial partner's professional real-time encoder/decoder for AVC, HEVC and VVC.",
+        "Four peer-reviewed publications from the thesis: ICASSP 2020, IEEE TCE 2021, IEEE TCE 2022, PCS 2022.",
+        "Units are as reported in each chapter (Design Compiler cell area, gate count, or µm²), so compare within a row group, not across."
+      ],
+      "table": {
+        "columns": ["Block", "Side", "Throughput", "Multipliers", "Area", "Memory", "Power", "Where"],
+        "rows": [
+          ["Inverse MTS, design 1", "Decoder", "2 samples/cycle (1-D)", "32 RM", "96,849 cell area", "ROM 17.4 Kbit", "—", "Ch. 5 · ICASSP 2020"],
+          ["Inverse MTS, design 2", "Decoder", "4 samples/cycle (1-D)", "64 RM", "138.9 Kgates", "ROM 17.9 Kbit", "—", "Ch. 6 · TCE 2021 · in chip"],
+          ["Inverse LFNST", "Decoder", "4 samples/cycle", "64 RM", "109.2 Kgates", "ROM 64 Kbit", "—", "Ch. 6 · TCE 2021 · in chip (first HW LFNST)"],
+          ["Transform chains, shared DCT/iDCT", "Encoder", "3 × 32 samples/cycle", "504–1,536 CM (study)", "study", "—", "—", "Ch. 7 · adopted in encoder"],
+          ["ALF (7×7, 5×5, CC-ALF)", "Decoder", "2 pixels/cycle", "26 RM", "66,997 µm²", "RAM 50.56 Kbit", "9.6 mW @0.8 V", "Ch. 9 · TCE 2022 · in chip"],
+          ["ALF luma filter", "Encoder", "2 pixels/cycle", "24 RM", "41,984 µm²", "RAM 12.3 Kbit", "13.6 mW @0.8 V", "Ch. 10 · PCS 2022 · in chip"],
+          ["ALF decision (4 filters + SSD)", "Encoder", "1 pixel/cycle", "48 RM", "58,628 µm²", "RAM 101.6 Kbit", "17.9 mW @0.8 V", "Ch. 10 · PCS 2022 · in chip"]
+        ]
+      },
+      "figures": [],
+      "expert": "<p>'In chip' means integrated into the industrial partner's real-time professional VVC encoder/decoder, as stated in the abstract and in each chapter's conclusion. RM = regular (true) multipliers, CM = constant multipliers (shift-and-add). Power figures are at the typical corner, 85 °C.</p>",
+      "sources": ["Thesis abstract; §5.4, §6.5, §7.4, §9.6, §10.4; Appendix A (publications)"],
+      "narration": "Let us put the whole thesis on one page. On the decoder: an inverse MTS at four samples per cycle with 64 multipliers, about 139 thousand gates; an inverse LFNST with 64 multipliers, about 109 thousand gates; and an adaptive loop filter at two pixels per cycle with 26 multipliers, 67 thousand square micrometres and fifty kilobits of RAM. On the encoder: a transform loop organised as three chains of 32 samples per cycle, with a shared DCT and inverse DCT core; an ALF luma filter with 24 multipliers; and an ALF decision engine with 48 multipliers and a hundred-kilobit line buffer. All at 450 megahertz on a 28 nanometre process, all with fixed latency, all verified bit-exactly against the reference software, and all integrated into the industrial partner's professional real-time encoder and decoder, which handle AVC, HEVC and VVC. Four peer-reviewed publications came out of it: one at ICASSP, two in the IEEE Transactions on Consumer Electronics, and one at the Picture Coding Symposium."
+    },
+    {
+      "id": "20", "part": "E",
+      "title": "What it established, and the open roads",
+      "kicker": "Chapter 11 · Conclusions and perspectives",
+      "points": [
+        "<b>Three firsts</b>: the first hardware LFNST; the first complete ALF hardware for a VVC decoder (filters, memory, gradients, CC-ALF, 4:2:2); the first hardware study of the ALF encoder (filtering and decision).",
+        "<b>One reversal</b>: for VVC's many transform types and sizes, shared regular multipliers beat multiplier-less constant arithmetic by 63 %.",
+        "<b>One method</b>: derive samples-per-cycle from the standard's cycle budgets, then buy coding gain only where it is affordable (luma-only ALF at the encoder, four filter sets, 60×60 decision).",
+        "Perspectives: unify MTS and LFNST on one 64-multiplier core; a hybrid with constant multipliers for DCT-2 and regular ones for the rest; machine learning to prune the encoder's transform search; extend the encoder ALF to one chroma filter.",
+        "Since then, VVC silicon has become mainstream: licensable VVC encoder and decoder IP cores (2024) and VVC decoding in consumer processors confirm these were the right questions."
+      ],
+      "figures": [],
+      "expert": "<p>The MTS/LFNST unification would trade a larger ROM for fewer multipliers (64 instead of 128); the hybrid CM/RM transform would settle 'the rivalry between the RM and CM-based architectures'. On the encoder, learned partition/transform decisions would need their own hardware design to be compared fairly. For the ALF encoder, supporting one chroma filter would reveal its coding-efficiency value against its silicon cost. Industry context after the thesis: Allegro DVT announced a real-time VVC/H.266 encoder IP (E320, 2024); VVC decoder IP cores and VVC decode in Intel's Lunar Lake (2024) brought VVC to consumer devices.</p>",
+      "sources": ["Thesis Ch. 11, pp. 153–156", "Design & Reuse: Allegro DVT VVC encoder IP (2024); FlatpanelsHD: VVC decode in Intel Lunar Lake (2024)"],
+      "narration": "What did the thesis establish? Three firsts: the first hardware LFNST; the first complete ALF hardware for a VVC decoder, including the memory and the gradient computation; and the first hardware study of the ALF encoder. One reversal of folklore: for VVC's many transform types and sizes, shared regular multipliers beat multiplier-less constant arithmetic, by 63 percent. And one method: budgeting silicon from the standard's cycle budgets, and buying coding gain only where it is affordable, as with the luma-only ALF at the encoder. The thesis also leaves open roads: unify the MTS and LFNST multipliers into one 64-multiplier core; build a hybrid with constant multipliers for DCT-2 and regular ones for the rest; use machine learning to prune the encoder's transform search; and extend the encoder ALF to chroma. Since then, the industry has caught up with VVC silicon. Dedicated encoder and decoder IP cores exist, and VVC decoding has reached mainstream consumer processors, which confirms that the hardware questions studied here were the right ones."
+    },
+    {
+      "id": "21", "part": "E",
+      "title": "After the PhD",
+      "kicker": "From silicon budgets to energy budgets, and beyond",
+      "points": [
+        "<b>IETR, research engineer (2022–2023)</b>: the same questions, throughput, energy, real time, turned towards software. OpenVVC live and low-energy on ARM (ISCAS 2023); energy-efficient VVC decoding on mobile (MMSP 2023); an open-source toolkit for live end-to-end 4K VVC intra coding (ACM MMSys 2023); VVC software decoders on embedded platforms (Journal of Real-Time Image Processing 2023).",
+        "<b>Researcher (2024 →)</b>: real-time immersive video streaming from drones, learned compression, 360° video datasets and challenges (ODVISTA, ICIP 2024), the energy cost of coding omnidirectional video on ARM and x86, then foundation models and robotics (Falcon-H1, agentic manipulation).",
+        "The through-line: understand the algorithm precisely, measure what it costs, and design the system that delivers it within a budget."
+      ],
+      "figures": [],
+      "expert": "<p>Several of these later works keep the same co-authors (Hamidouche, Ménard, Déforges, Cabarat) and the same evaluation discipline (CTC sequences, energy in joules per sequence, real-time thresholds). Google Scholar lists about 200 citations and an h-index of 8 as of 2026; the ICASSP 2020 and TCE 2021 transform papers are the most cited of the thesis.</p>",
+      "sources": ["Google Scholar profile; HAL records hal-04223048, hal-04357305, hal-04163694, hal-04329306"],
+      "narration": "The hardware mindset did not stop at the defense. Ibrahim stayed at the IETR as a research engineer and turned the same questions, throughput, energy, real time, towards software: the OpenVVC decoder running live and low-energy on ARM platforms; energy-efficient VVC decoding on mobile; and an open-source toolkit for live end-to-end 4K VVC intra coding, with results at ISCAS, MMSP and ACM MMSys in 2023, and in the Journal of Real-Time Image Processing. He then moved to a research institute as a researcher, working on real-time immersive video streaming from drones, learned compression, 360-degree video datasets and challenges, the energy cost of coding omnidirectional video on ARM and x86 processors, and more recently on foundation models and robotics. The through-line is the one this page has followed: understand the algorithm precisely, measure what it costs, and design the system that delivers it within a budget."
+    }
+  ]
+}

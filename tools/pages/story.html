@@ -1,0 +1,825 @@
+<title>VVC in Silicon</title>
+<style>
+/* Layout: a beige hero with a 3D die and a pixel-mosaic strip, then ten scenes (visual left, two sentences right, a "go deeper" fold), a square-dot rail that marks the scene, a record section and a footer.
+   Theme: warm beige ground, black ink, a five-step yellow-to-red block gradient as the only colour, square corners, uppercase small labels, large tight headlines; the 3D scenes render at low resolution and upscale without smoothing so they read as pixel art. */
+:root{
+  --bg:#FFFAEB; --surface:#FFFFFF; --surface-2:#FFF0C3; --fg:#1E1E1E; --muted:#6b6557; --line:#E9E2CB;
+  --accent:#FA500F; --accent-ink:#FFFAEB; --ink:#1E1E1E; --ink-fg:#FFFAEB; --link:#1E1E1E;
+  --y:#FFD800; --ol:#FFAF00; --o:#FF8205; --od:#FA500F; --r:#E10500;
+  --grid:rgba(30,30,30,.06); --bar:#CFC5A7; --shadow:rgba(250,80,15,.12);
+  --c3-die:#1E1E1E; --c3-pin:#C4B995; --c3-block:#BDB28C; --c3-accent:#FF8205; --c3-glow:#FFD800; --c3-blue:#1E1E1E; --c3-green:#E10500;
+  --c3-dim:#EBE3C9; --c3-y:#BDB28C; --c3-cr:#FA500F; --c3-cb:#FFD800; --c3-rail:#E9E2CB;
+  --display:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --body:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --mono:ui-monospace,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --ink:#FFFAEB; --ink-fg:#1E1E1E; --link:#FFFAEB; --grid:rgba(255,250,235,.05); --bar:#6b6557; --shadow:rgba(0,0,0,.35);
+    --c3-die:#000000; --c3-pin:#4a4337; --c3-block:#5a5244; --c3-dim:#2e2a24; --c3-y:#5a5244; --c3-rail:#2a2622; --c3-blue:#FFF0C3; --c3-green:#FFD800; color-scheme:dark }
+}
+:root[data-theme="dark"]{ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --ink:#FFFAEB; --ink-fg:#1E1E1E; --link:#FFFAEB; --grid:rgba(255,250,235,.05); --bar:#6b6557; --shadow:rgba(0,0,0,.35);
+    --c3-die:#000000; --c3-pin:#4a4337; --c3-block:#5a5244; --c3-dim:#2e2a24; --c3-y:#5a5244; --c3-rail:#2a2622; --c3-blue:#FFF0C3; --c3-green:#FFD800; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;padding-block:0 40px}
+a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--accent)}
+h1,h2,h3{font-family:var(--display);line-height:1.05;text-wrap:balance;margin:0;font-weight:700;letter-spacing:-.025em}
+h1{font-size:clamp(2.4rem,5.6vw,4.2rem);line-height:.98;letter-spacing:-.035em}
+h2{font-size:clamp(1.6rem,3vw,2.3rem)}
+h3{font-size:1.1rem;letter-spacing:-.01em}
+p{margin:0}
+.wrap{max-width:1180px;margin-inline:auto;padding-inline:clamp(16px,3vw,32px);min-width:0}
+.eyebrow{font-family:var(--display);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+.btn{border:1px solid var(--ink);background:transparent;color:var(--fg);padding:11px 16px;border-radius:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1.2;text-decoration:none;font-weight:700;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:7px 11px;font-size:.7rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.rainbow{height:10px;background:linear-gradient(90deg,var(--y) 0 20%,var(--ol) 20% 40%,var(--o) 40% 60%,var(--od) 60% 80%,var(--r) 80%)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in oklab,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.brand{font-family:var(--display);font-weight:700;letter-spacing:-.02em;text-decoration:none;color:var(--fg);white-space:nowrap;font-size:1.05rem}
+.brand span{color:var(--muted);font-weight:400;font-size:.95rem;letter-spacing:0}
+.top nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.top nav a{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--fg);padding:7px 10px;white-space:nowrap;border-bottom:2px solid transparent}
+.top nav a:hover{border-bottom-color:var(--accent);color:var(--fg)}
+
+/* hero */
+.hero{position:relative;background:var(--bg);color:var(--fg);border-bottom:1px solid var(--line);overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:32px;align-items:center;padding-block:52px 56px}
+.hero .eyebrow{color:var(--muted)}
+.hero .rainbow{width:200px;margin-top:18px}
+.hero p.lede{font-size:1.12rem;max-width:44ch;margin-top:18px}
+.hero p.who{color:var(--muted);font-size:.95rem;margin-top:12px}
+.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.hero3d{position:relative}
+.hero3d .c3d{height:clamp(300px,42vw,460px);background:var(--surface-2)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.84rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;vertical-align:-1px;margin-right:6px}
+.hint{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:absolute;right:10px;top:8px;z-index:2}
+.mosaic{position:absolute;left:0;right:0;bottom:0;height:24px;display:block}
+.mosaic svg{display:block;width:100%;height:100%}
+
+/* 3D host + overlay labels: low-resolution render, upscaled without smoothing */
+.c3d{position:relative;width:100%;height:380px;min-width:0;touch-action:pan-y;cursor:grab;overflow:hidden;border:1px solid var(--line);background:var(--surface-2);box-shadow:0 12px 32px var(--shadow)}
+.c3d::before{content:"";position:absolute;left:8px;top:8px;width:30px;height:6px;background:linear-gradient(90deg,var(--y) 0 20%,var(--ol) 20% 40%,var(--o) 40% 60%,var(--od) 60% 80%,var(--r) 80%);z-index:2}
+.c3d:active{cursor:grabbing}
+.c3d canvas{display:block;position:relative;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;image-rendering:pixelated}
+.c3d.no3d::after{content:"3D view needs WebGL; the figures in “Go deeper” show the same thing.";position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.9rem;padding:20px;text-align:center}
+.l3d{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:none;font-size:.64rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 7px;background:color-mix(in oklab,var(--surface) 90%,transparent);color:var(--fg);border:1px solid var(--line);white-space:nowrap;will-change:transform}
+.l3d.acc{border-color:var(--accent);color:var(--accent)}
+.stage-label{position:absolute;left:12px;bottom:10px;font-size:.82rem;font-weight:700;background:color-mix(in oklab,var(--surface) 92%,transparent);border:1px solid var(--line);padding:6px 10px;max-width:calc(100% - 24px)}
+.stage-tools{position:absolute;right:10px;top:10px;display:flex;gap:4px;z-index:2}
+.stage-tools button{border:1px solid var(--line);background:color-mix(in oklab,var(--surface) 92%,transparent);padding:5px 8px;font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
+.stage-tools button[aria-pressed="true"]{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+
+/* scenes */
+.scene{padding-block:52px;border-bottom:1px solid var(--line)}
+.scene .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:36px;align-items:center}
+.scene .visual{min-width:0;display:grid;gap:12px}
+.scene .visual figure{position:relative;margin:0;background:var(--surface);border:1px solid var(--line);padding:14px 12px 10px;min-width:0}
+.scene .visual figure::before{content:"";position:absolute;left:8px;top:6px;width:30px;height:6px;background:linear-gradient(90deg,var(--y) 0 20%,var(--ol) 20% 40%,var(--o) 40% 60%,var(--od) 60% 80%,var(--r) 80%)}
+.scene .visual figure svg{width:100%;height:auto;display:block}
+.scene .visual figcaption{font-size:.82rem;color:var(--muted);margin-top:6px;line-height:1.4}
+.scene .text{min-width:0}
+.scene .num{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:inline-flex;align-items:center;gap:8px}
+.scene .num::before{content:"";width:30px;height:6px;background:linear-gradient(90deg,var(--y) 0 20%,var(--ol) 20% 40%,var(--o) 40% 60%,var(--od) 60% 80%,var(--r) 80%)}
+.scene h2{margin-top:10px}
+.scene p.say{font-size:1.14rem;line-height:1.6;max-width:44ch;margin-top:16px}
+.scene p.say b{font-weight:700}
+.scene .tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;align-items:center}
+.deeper{position:relative;margin-top:18px;border:1px solid var(--line);background:var(--surface);padding:0 16px}
+.deeper summary{cursor:pointer;padding:13px 0;font-weight:700;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.deeper summary::-webkit-details-marker{display:none}
+.deeper summary::after{content:"+";font-size:1rem;color:var(--muted)}
+.deeper[open] summary::after{content:"−"}
+.deeper ul{margin:0;padding:0 0 12px 18px;display:grid;gap:7px;font-size:.95rem;max-width:62ch}
+.deeper figure{margin:0 0 12px;background:var(--bg);border:1px solid var(--line);padding:8px}
+.deeper figure img{display:block;width:100%;height:auto;image-rendering:auto}
+.deeper figcaption{font-size:.8rem;color:var(--muted);margin-top:6px;line-height:1.4}
+.deeper .src{font-size:.8rem;color:var(--muted);padding-bottom:12px}
+.deeper .src b{color:var(--fg);font-weight:700}
+.chart .lbl{fill:var(--fg);font-family:var(--body);font-size:12.5px}
+.chart .val{fill:var(--fg);font-family:var(--body);font-size:12px;font-weight:700}
+.chart .small{fill:var(--muted);font-family:var(--body);font-size:10.5px}
+.chart .bar{fill:var(--bar);stroke:none}
+.chart .bar.emph{fill:var(--accent);stroke:none}
+.chart .bar.blue{fill:var(--ink);stroke:none}
+.chart .axis{stroke:var(--ink);stroke-width:1.5}
+.chart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.pipe text{font-family:var(--body);font-size:12px;fill:var(--fg)}
+.pipe .small{font-size:10.5px;fill:var(--muted)}
+.pipe .box{fill:var(--surface);stroke:var(--fg);stroke-width:1.1}
+.pipe .box.hl{stroke:var(--accent);stroke-width:2.4;fill:color-mix(in oklab,var(--o) 22%,var(--surface));animation:pulse 2.4s ease-in-out infinite}
+.pipe .arrow{stroke:var(--fg);stroke-width:1.2;fill:none}
+.pipe .dash{stroke:var(--muted);stroke-dasharray:4 4;fill:none}
+.pipe .dot{fill:var(--ink)}
+.pipe .dot.acc{fill:var(--accent)}
+@keyframes pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.45}}
+.gauge{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.gauge .track{height:14px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.gauge .track i{display:block;height:100%;background-image:repeating-linear-gradient(90deg,transparent 0 6px,var(--surface-2) 6px 9px),linear-gradient(90deg,var(--y),var(--ol),var(--o),var(--od),var(--r));width:0;transition:width .15s linear}
+.gauge .val{min-width:9ch;text-align:right;font-size:.95rem;text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+.counters{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.counter{position:relative;border:1px solid var(--line);background:var(--surface);padding:14px 12px 12px}
+.counter .v{font-family:var(--display);font-weight:700;font-size:2.3rem;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.counter .k{font-size:.8rem;color:var(--muted);margin-top:8px}
+.counter.acc .v{color:var(--accent)}
+
+/* square-dot rail */
+.rail{position:fixed;right:14px;top:50%;transform:translateY(-50%);display:grid;gap:9px;z-index:20}
+.rail a{width:9px;height:9px;background:var(--line);display:block;transition:transform .2s,background .2s}
+.rail a.active{background:var(--accent);box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--accent)}
+.rail a:hover{background:var(--ink)}
+
+/* record */
+.record{padding-block:52px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}
+.card{position:relative;border:1px solid var(--line);background:var(--surface);padding:18px 16px 16px;min-width:0}
+.card::before{content:"";position:absolute;left:0;top:0;width:30px;height:6px;background:linear-gradient(90deg,var(--y) 0 20%,var(--ol) 20% 40%,var(--o) 40% 60%,var(--od) 60% 80%,var(--r) 80%)}
+.card .n{font-family:var(--display);font-weight:700;font-size:1.1rem;letter-spacing:-.01em;margin-top:4px}
+.card .r{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-top:5px}
+.card .a{font-size:.88rem;color:var(--muted);margin-top:4px}
+.kv{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px 14px;font-size:.92rem;margin-top:16px;max-width:70ch}
+.kv dt{color:var(--muted);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding-top:4px}
+.kv dd{margin:0}
+.pubs{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px;max-width:80ch}
+.pubs li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;font-size:.92rem;padding:10px 0;border-bottom:1px solid var(--line)}
+.pubs .tag{font-weight:700;color:var(--muted);font-size:.8rem;letter-spacing:.06em}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+footer{padding-block:0 28px;font-size:.84rem;color:var(--muted)}
+footer .rainbow{margin-bottom:24px}
+footer .wrap{display:grid;gap:6px}
+
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr}
+  .scene .wrap{grid-template-columns:1fr}
+  .rail{display:none}
+  .c3d{height:320px}
+}
+@media (max-width:520px){ .kv{grid-template-columns:1fr} .c3d{height:280px} .pubs li{grid-template-columns:1fr} h1{font-size:2.2rem} }
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important} .pipe .box.hl{animation:none} }
+</style>
+<!-- body -->
+<div class="top"><div class="wrap">
+  <a class="brand" href="#">VVC in Silicon <span>· a PhD, explained</span></a>
+  <nav aria-label="Pages"><a href="#s1">Story</a><a href="#record">Record</a><a href="explainer.html">Walkthrough</a><a href="platforms.html">Chips 101</a><a href="https://theses.hal.science/tel-04477217" target="_blank" rel="noopener">Thesis PDF</a></nav>
+</div></div>
+
+<header class="hero" id="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">PhD · INSA Rennes / IETR · 2019 – 2022</div>
+      <h1 style="margin-top:12px">Putting the newest video codec into a chip</h1>
+      <div class="rainbow" aria-hidden="true"></div>
+      <p class="lede">Three new tools of the VVC / H.266 standard, turned into small, cool, real-time hardware blocks for a 4K encoder and decoder chip.</p>
+      <p class="who"><b style="color:var(--hero-fg)">Ibrahim Farhat</b> · <i>Efficient hardware designs of the new Versatile Video Coding (VVC) tools for ASIC platforms</i> · defended 31 May 2022</p>
+      <div class="cta">
+        <button class="btn primary" id="playAll">▶ Play the story <span class="mono" id="playAllTime"></span></button>
+        <a class="btn" href="#s1">Read in 10 scenes ↓</a>
+        <a class="btn" href="explainer.html">Go deep: narrated walkthrough</a>
+      </div>
+    </div>
+    <div class="hero3d">
+      <div class="c3d" id="chip3d" aria-label="3D model of a codec chip; the blocks designed in this thesis are highlighted" role="img"></div>
+      <span class="hint">drag to rotate</span>
+      <div class="legend"><span><i style="background:var(--c3-accent)"></i>designed in this thesis</span><span><i style="background:var(--c3-block)"></i>the rest of the codec chip (simplified)</span></div>
+    </div>
+  </div>
+  <div class="mosaic" id="mosaic" aria-hidden="true"></div>
+</header>
+
+<div class="rail" id="rail" aria-label="Scenes"></div>
+
+<main>
+<!-- 1 -->
+<section class="scene" id="s1" data-scene="01">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="bits3d" role="img" aria-label="3D bar chart: relative bit rate of H.264, HEVC and VVC at equal quality, and relative encoder complexity of HEVC and VVC"></div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 1 / 10</span>
+      <h2>Every new standard halves the bits</h2>
+      <p class="say">VVC (2020) needs <b>40–50 % fewer bits</b> than HEVC for the same picture. The price: an encoder about <b>10×</b> more complex, a decoder about 2×.</p>
+      <div class="tools"><button class="btn small play" data-scene="01">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Standards: H.261 (1990) → MPEG-2 (1993) → H.264/AVC (2003) → HEVC/H.265 (2013) → VVC/H.266 (July 2020), each developed jointly by ITU-T VCEG and ISO/IEC MPEG.</li>
+          <li>VVC: about 40 % bit-rate reduction in objective terms (thesis abstract) and about 50 % in subjective tests (JVET), at the same quality.</li>
+          <li>Complexity estimated at about 10× HEVC for the encoder and about 2× for the decoder (thesis §2.2).</li>
+          <li>Video was forecast at 82 % of internet traffic by 2023 (Cisco, cited in the thesis).</li>
+        </ul>
+        <figure><img src="assets/figures/fig_3_3.png" alt="Timeline of video coding standards from H.261 to VVC" loading="lazy"><figcaption>Thirty years of standards. Thesis Fig. 3.3.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §2.1–2.2 and §3.3; Bross et al., “Overview of the VVC standard”, IEEE TCSVT 2021.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="scene" id="s2" data-scene="02">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="dct3d" role="img" aria-label="3D animation of an 8 by 8 block: pixel values, then the residual after prediction, then transform coefficients concentrated in one corner, then the quantised coefficients, most of them zero"><div class="stage-label" id="dctLabel">1 · an 8×8 block of pixels</div></div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 2 / 10</span>
+      <h2>How a codec works</h2>
+      <p class="say"><b>Predict</b> the block, keep the difference, <b>transform</b> it so the energy gathers in one corner, <b>quantise</b>, write the few values left. The decoder reverses it, and the encoder contains a full decoder.</p>
+      <div class="tools"><button class="btn small play" data-scene="02">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Every modern codec is a hybrid coder: intra prediction (from neighbours in the picture) or inter prediction (from previous pictures, with motion), then transform, quantisation and entropy coding of the residual.</li>
+          <li>The encoder reconstructs exactly what the decoder will see, because future predictions must use the same pixels on both sides. In-loop filters clean that reconstruction before it becomes a reference.</li>
+          <li>Every encoder decision minimises a rate–distortion cost J = D + λ·R. Codecs are compared by Bjøntegaard delta rate under JVET common test conditions.</li>
+          <li>The animation computes a real 2-D DCT of its residual and quantises with a step of 16; the count of non-zero coefficients is the actual result.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_3_5.png" alt="The VVC encoder with the decoder loop inside it" loading="lazy"><figcaption>The VVC encoder with the decoder loop (grey box) inside it. Thesis Fig. 3.5.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §3.2–3.4.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="scene" id="s3" data-scene="03">
+  <div class="wrap">
+    <div class="visual">
+      <figure><svg class="pipe" viewBox="0 0 850 345" role="img" aria-label="The coding loop with the transform, inverse transform and ALF blocks highlighted; dots travel along the encoder path and the decoder loop">
+        <defs><marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          <path id="pathEnc" d="M120,65 L760,65"/><path id="pathLoop" d="M500,90 L500,150 L500,175 L405,175 L190,175 L175,175 L175,285 L215,285 L740,285 L748,285 L748,120 L175,120 L175,80"/></defs>
+        <text x="20" y="24" class="small">ENCODER</text>
+        <rect class="box" x="20" y="40" width="100" height="50" rx="0"/><text x="70" y="69" text-anchor="middle">Input video</text>
+        <line class="arrow" x1="120" y1="65" x2="159" y2="65" marker-end="url(#pa)"/>
+        <circle class="box" cx="175" cy="65" r="14"/><text x="175" y="70" text-anchor="middle" font-size="16">−</text>
+        <line class="arrow" x1="189" y1="65" x2="213" y2="65" marker-end="url(#pa)"/><text x="200" y="32" text-anchor="middle" class="small">residual</text>
+        <rect class="box hl" x="215" y="40" width="190" height="50" rx="0"/><text x="310" y="60" text-anchor="middle" font-weight="600">Transform</text><text x="310" y="78" text-anchor="middle" class="small">MTS · LFNST</text>
+        <line class="arrow" x1="405" y1="65" x2="438" y2="65" marker-end="url(#pa)"/><text x="422" y="32" text-anchor="middle" class="small">coefficients</text>
+        <rect class="box" x="440" y="40" width="120" height="50" rx="0"/><text x="500" y="69" text-anchor="middle">Quantisation</text>
+        <line class="arrow" x1="560" y1="65" x2="593" y2="65" marker-end="url(#pa)"/><text x="577" y="32" text-anchor="middle" class="small">levels</text>
+        <rect class="box" x="595" y="40" width="130" height="50" rx="0"/><text x="660" y="69" text-anchor="middle">Entropy coding</text>
+        <line class="arrow" x1="725" y1="65" x2="758" y2="65" marker-end="url(#pa)"/><text x="766" y="69" class="small">bitstream</text>
+        <rect class="dash" x="205" y="135" width="555" height="200" rx="0"/>
+        <text x="215" y="328" class="small">DECODER LOOP · the same blocks, bit-exact, form the decoder chip</text>
+        <line class="arrow" x1="500" y1="90" x2="500" y2="148" marker-end="url(#pa)"/>
+        <rect class="box" x="440" y="150" width="120" height="50" rx="0"/><text x="500" y="171" text-anchor="middle">Inverse</text><text x="500" y="188" text-anchor="middle">quantisation</text>
+        <line class="arrow" x1="440" y1="175" x2="407" y2="175" marker-end="url(#pa)"/>
+        <rect class="box hl" x="215" y="150" width="190" height="50" rx="0"/><text x="310" y="170" text-anchor="middle" font-weight="600">Inverse transform</text><text x="310" y="188" text-anchor="middle" class="small">iMTS · iLFNST</text>
+        <line class="arrow" x1="215" y1="175" x2="191" y2="175" marker-end="url(#pa)"/>
+        <circle class="box" cx="175" cy="175" r="14"/><text x="175" y="180" text-anchor="middle" font-size="16">+</text>
+        <polyline class="arrow" points="175,189 175,285 213,285" marker-end="url(#pa)"/><text x="183" y="240" class="small">reconstruction</text>
+        <rect class="box" x="215" y="260" width="190" height="50" rx="0"/><text x="310" y="279" text-anchor="middle" font-weight="600">In-loop filters</text><text x="276" y="297" text-anchor="middle" class="small">DBF · SAO ·</text>
+        <rect class="box hl" x="318" y="285" width="38" height="17" rx="0"/><text x="337" y="297" text-anchor="middle" font-size="11" font-weight="600">ALF</text>
+        <line class="arrow" x1="405" y1="285" x2="438" y2="285" marker-end="url(#pa)"/>
+        <rect class="box" x="440" y="260" width="120" height="50" rx="0"/><text x="500" y="281" text-anchor="middle">Reference</text><text x="500" y="298" text-anchor="middle">pictures</text>
+        <line class="arrow" x1="560" y1="285" x2="593" y2="285" marker-end="url(#pa)"/>
+        <rect class="box" x="595" y="260" width="130" height="50" rx="0"/><text x="660" y="281" text-anchor="middle">Prediction</text><text x="660" y="298" text-anchor="middle" class="small">intra · inter (motion)</text>
+        <polyline class="arrow" points="725,285 748,285 748,120 175,120 175,81" marker-end="url(#pa)"/>
+        <line class="arrow" x1="175" y1="120" x2="175" y2="159" marker-end="url(#pa)"/>
+        <text x="300" y="113" text-anchor="middle" class="small">prediction signal</text>
+        <g class="dots">
+          <rect class="dot acc" x="-4" y="-4" width="8" height="8"><animateMotion dur="5s" repeatCount="indefinite" begin="0s"><mpath href="#pathEnc"/></animateMotion></rect>
+          <rect class="dot acc" x="-4" y="-4" width="8" height="8"><animateMotion dur="5s" repeatCount="indefinite" begin="1.7s"><mpath href="#pathEnc"/></animateMotion></rect>
+          <rect class="dot acc" x="-4" y="-4" width="8" height="8"><animateMotion dur="5s" repeatCount="indefinite" begin="3.4s"><mpath href="#pathEnc"/></animateMotion></rect>
+          <rect class="dot" x="-4" y="-4" width="8" height="8"><animateMotion dur="12s" repeatCount="indefinite" begin="0s"><mpath href="#pathLoop"/></animateMotion></rect>
+          <rect class="dot" x="-4" y="-4" width="8" height="8"><animateMotion dur="12s" repeatCount="indefinite" begin="4s"><mpath href="#pathLoop"/></animateMotion></rect>
+          <rect class="dot" x="-4" y="-4" width="8" height="8"><animateMotion dur="12s" repeatCount="indefinite" begin="8s"><mpath href="#pathLoop"/></animateMotion></rect>
+        </g>
+      </svg><figcaption>Orange: the three tools designed in the thesis, on both the encoder and the decoder side.</figcaption></figure>
+    </div>
+    <div class="text">
+      <span class="num">Scene 3 / 10</span>
+      <h2>What VVC adds, and what the thesis builds</h2>
+      <p class="say">Two new transforms, <b>MTS</b> and <b>LFNST</b>, and a new in-loop filter, <b>ALF</b>. Real compression gains, expensive in hardware. The thesis builds exactly these three, for the decoder and the encoder.</p>
+      <div class="tools"><button class="btn small play" data-scene="03">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li><b>MTS</b>: the encoder picks DCT-2, DST-7 or DCT-8 per direction (5 combinations) for luma blocks; DCT-2 up to 64×64. Switching it off costs +1.3 % bit rate in intra coding (VTM 8).</li>
+          <li><b>LFNST</b>: a second, non-separable transform on the low-frequency corner of DCT-2 blocks; 4 sets × 2 kernels. Off: +1.0 % (luma), +2 % (chroma) in intra coding.</li>
+          <li><b>ALF</b>: a 7×7 luma diamond, a 5×5 chroma diamond and a cross-component filter. Off: +2.2 % (luma) and +12.8 % (chroma U) in intra coding; ALF is about a quarter of the software decoder's time.</li>
+          <li>Hardware cost comes from more multiplications, more kernels to store (3 MTS, 8 LFNST, 64 fixed ALF filters) and, for ALF, the pixel neighbourhoods kept in memory.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_11_1.png" alt="Thesis map over the VVC codec" loading="lazy"><figcaption>The thesis map: which chapters cover which blocks. Thesis Fig. 11.1.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §3.4, Tables 6.7 and 9.7, Fig. 9.12.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="scene" id="s4" data-scene="04">
+  <div class="wrap">
+    <div class="visual">
+      <figure><div id="energyChart" class="chart"></div><figcaption>Energy for the same H.264 encoding, relative to a dedicated circuit (Hameed et al., ISCA 2010). Logarithmic scale.</figcaption></figure>
+    </div>
+    <div class="text">
+      <span class="num">Scene 4 / 10</span>
+      <h2>Why a chip</h2>
+      <p class="say">Live video must arrive <b>on time, every frame</b>. Software cannot reach a codec's best quality in real time; a custom chip (ASIC) does the work at a small fraction of the energy. The price: nothing can change after manufacture.</p>
+      <div class="tools"><button class="btn small play" data-scene="04">▶ Listen</button><a class="btn small" href="platforms.html">CPU · GPU · FPGA · ASIC, level by level →</a></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>The thesis cites a study by Xilinx: dedicated hardware (FPGA or ASIC) reaches higher quality at lower power than software for real-time video; and the rule of thumb of about 20× the performance of a CPU at about 20× lower power for an ASIC.</li>
+          <li>Hameed et al. measured a general-purpose processor at about 500× the energy of an ASIC for H.264 encoding; SIMD and VLIW extensions recovered about 10×; the remaining 50× needed custom datapaths.</li>
+          <li>Real-time encoders are judged on quality, latency, SWaP (size, weight, power) and feature set. The partner's appliances are fanless and go on vehicles, backpacks and drones.</li>
+          <li>The partner's previous (HEVC) generation ran on FPGAs; VVC moved to an ASIC once the standard was final (July 2020).</li>
+        </ul>
+        <figure><img src="assets/figures/fig_3_12.png" alt="Flexibility versus performance and power efficiency from CPU to ASIC" loading="lazy"><figcaption>Flexibility against performance and power efficiency. Thesis Fig. 3.12.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §3.5; Hameed et al., “Understanding sources of inefficiency in general-purpose chips”, ISCA 2010.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="scene" id="s5" data-scene="05">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="flow3d" role="img" aria-label="3D animation: four lanes of samples enter the inverse LFNST, the one-dimensional inverse MTS and the transpose memory at four samples per clock cycle"><div class="stage-label" id="flowClock">cycle 0 · 0 samples</div></div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 5 / 10</span>
+      <h2>The contract: samples per cycle</h2>
+      <p class="say">4K at 60 fps through a 450 MHz chip: the transform must absorb <b>4 samples every clock cycle</b>, with the <b>same latency for every block size</b> so modules chain without stalls. Then the score is area, memory and power.</p>
+      <div class="tools"><button class="btn small play" data-scene="05">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Decoder: 4K120 over two cores → 4K60 per core at 450 MHz. 3840×2160×60 luma samples ×1.5 (4:2:0 chroma) ≈ 747 M samples/s ≈ 1.7 per cycle on average; the module is sized for the worst case (small blocks, no zeroing): 4 samples/cycle for the 1-D transform, 2 for the folded 2-D transform, 2 pixels/cycle for ALF.</li>
+          <li>Cycle budget per transform block at 4K60: 64×64 → 1,238 cycles; 32×32 → 310; 16×16 → 78; 8×8 → 20; 4×4 → 5 (thesis Table 6.1).</li>
+          <li>Encoder: 4K60 over four cores → 1080p60 per core, with 9,000 cycles per 64×64 coding tree unit for all its transform candidates and loop filters.</li>
+          <li>Cost is reported after synthesis with Synopsys Design Compiler on TSMC 28 nm: cell area or gates, kilobits of RAM/ROM, milliwatts at 0.8 V and 85 °C.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_6_1.png" alt="Folded 2-D transform: one 1-D core and a transpose memory" loading="lazy"><figcaption>The folded 2-D transform: one 1-D core used twice, with a transpose memory. Thesis Fig. 6.1.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §5.1, §6.1, §7.1, §9.1, §10.1.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="scene" id="s6" data-scene="06">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="mult3d" role="img" aria-label="3D animation: four samples drop into four pools of sixteen multipliers that receive their coefficients from a read-only memory; results leave every cycle"></div>
+      <figure><div id="rmChart" class="chart"></div><figcaption>1-D inverse MTS at 2 samples/cycle, cell area after synthesis (28 nm, 450 MHz). Thesis Table 5.4.</figcaption></figure>
+    </div>
+    <div class="text">
+      <span class="num">Scene 6 / 10</span>
+      <h2>The transform in silicon</h2>
+      <p class="say">Instead of hard-wiring every constant, <b>64 shared multipliers</b> read their coefficients from a small ROM: <b>63 % less silicon</b> than the multiplier-less design. LFNST was added the same way, the <b>first hardware LFNST</b> published.</p>
+      <div class="tools"><button class="btn small play" data-scene="06">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Design 1 (ICASSP 2020): 1-D inverse MTS at 2 samples/cycle. Constant multipliers (shift-and-add, one module per size and type): 266,315 cell area. Regular multipliers (32 shared, 1,872 coefficients in a 17.4 Kbit ROM): 96,849. The multi-standard engine also covers AVC and HEVC.</li>
+          <li>Design 2 (IEEE TCE 2021): 4 samples/cycle. MTS scales to 64 multipliers (+55 % area for 2× throughput, 138.9 Kgates); inverse LFNST added with its own 64 multipliers and a 64 Kbit ROM of the 8 kernels (109.2 Kgates). Unified: 128 multipliers, fixed latency, bypass delay line for blocks without LFNST.</li>
+          <li>Tricks used: butterfly decomposition of DCT-2 (sizes nest), DCT-8 = DST-7 with reversed inputs and flipped signs, zeroing of high frequencies for 64-point DCT-2 and 32-point DST-7/DCT-8.</li>
+          <li>Cost in perspective: at equal throughput the VVC transform (MTS + LFNST, 163,672 gates) is about 4× the HEVC transform (41,500 gates); MTS alone about 2×.</li>
+          <li>Encoder side: three transform chains of 32 samples/cycle; the forward DCT-2 shares its core with the inverse DCT-2 (symmetric odd kernels), LFNST kept separate.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_6_12.png" alt="Unified inverse LFNST and MTS architecture" loading="lazy"><figcaption>The unified inverse LFNST + MTS design and its two control units. Thesis Fig. 6.12.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis Ch. 5–7; Tables 5.4, 6.8–6.11, 7.7.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="scene" id="s7" data-scene="07">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="alf3d" role="img" aria-label="3D model of the 7 by 7 diamond filter kernel with bar heights for its coefficients, rotating and flipping as the block class changes; a smaller 5 by 5 chroma diamond beside it"><div class="stage-label" id="alfLabel">class 3 · no transform</div></div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 7 / 10</span>
+      <h2>A filter that learns its coefficients</h2>
+      <p class="say">ALF is a <b>7×7 diamond</b> whose coefficients the encoder chooses and sends. Each 4×4 block picks one of <b>25 classes</b> and rotates or flips the kernel. One engine with <b>26 multipliers</b> filters luma, chroma and the cross-component filter.</p>
+      <div class="tools"><button class="btn small play" data-scene="07">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>ALF is a Wiener filter: coefficients minimise the squared error between reconstruction and original; up to 25 luma sets and 8 chroma sets per adaptation parameter set, plus 64 fixed luma filters in the standard.</li>
+          <li>Point symmetry halves the multiplications: 12 unique luma coefficients, 6 chroma, 7 for the 3×4 cross-component filter.</li>
+          <li>Classification: sub-sampled Laplacian gradients in four directions give a directionality D (0–4) and an activity A (0–4); class = 5·D + A. The gradient ratios also choose rotation, vertical flip or diagonal flip of the kernel.</li>
+          <li>Filter engine: three pipeline stages (pixel selection → clip and add symmetric pairs → 26 multipliers), 2 pixels/cycle, one 4×4 block every 8 cycles, fixed latency for CTU sizes 16 to 128.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_8_5.png" alt="The luma 7x7 and chroma 5x5 diamond filters" loading="lazy"><figcaption>Luma 7×7 and chroma 5×5 diamonds; symmetric taps share a coefficient. Thesis Fig. 8.5.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis Ch. 8 and §9.5; Karczewicz et al., “VVC in-loop filters”, IEEE TCSVT 2021.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="scene" id="s8" data-scene="08">
+  <div class="wrap">
+    <div class="visual">
+      <div class="c3d" id="scan3d" role="img" aria-label="3D animation of a coding tree unit as luma, Cr and Cb block grids being scanned in three different orders; blocks that must wait in memory are lifted"><div class="stage-tools" id="scanTools"><button data-order="A" aria-pressed="false">A · luma first</button><button data-order="B" aria-pressed="false">B · chroma first</button><button data-order="C" aria-pressed="true">C · interleaved</button></div><div class="stage-label" id="scanLabel">C · Cr, Cb, Y, Y per line</div></div>
+      <div class="gauge"><span>memory</span><span class="track"><i id="memBar"></i></span><span class="val" id="memVal">0 Kbit</span></div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 8 / 10</span>
+      <h2>The memory problem</h2>
+      <p class="say">A filter needs its <b>eight neighbours</b>, so blocks wait in memory. Feeding <b>Cr, Cb, Y, Y</b> in turn keeps the co-located luma in the pipeline: only two lines of blocks are stored, <b>75 % less memory</b>.</p>
+      <div class="tools"><button class="btn small play" data-scene="08">▶ Listen</button></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Three feeding orders for a 128×128 CTU (4:2:2, 10-bit): A, whole luma first, keeps the entire luma CTB for the cross-component filter: 193.28 Kbit. B, chroma first, parks the filtered chroma until luma arrives: 213.12 Kbit. C, interleaved Cr, Cb, Y, Y per CTU line: two lines and two columns of blocks per component, 50.56 Kbit (35.84 for 4:2:0).</li>
+          <li>Second problem: a 4×4 block at 2 pixels/cycle is an 8-cycle window, but 8 neighbour reads plus 1 write take 9 cycles. Consecutive blocks share 6 of their 9 neighbours, so the second block needs only 3 operations: 12 per pair in a 16-cycle window.</li>
+          <li>Two RAMs: one serving a 4×4 block per cycle (160-bit port), one holding a one-sample column for the cross-component filter (40-bit port). The memory module is 48 % of the ALF area.</li>
+          <li>The animation is a simplified model: lifted blocks are those still held; the gauge rises to the thesis value for each order.</li>
+        </ul>
+        <figure><img src="assets/figures/fig_9_6.png" alt="Interleaved scanning order for a 32x32 CTU and the input/output sequence over time" loading="lazy"><figcaption>The proposed scanning for a 32×32 CTU (4:2:0) and the block sequence over time. Thesis Fig. 9.6.</figcaption></figure>
+        <p class="src"><b>Sources:</b> thesis §9.3–9.4, Tables 9.3–9.6; IEEE TCE 2022.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="scene" id="s9" data-scene="09">
+  <div class="wrap">
+    <div class="visual">
+      <div class="counters" id="counters">
+        <div class="counter acc"><div class="v" data-count="128">0</div><div class="k">multipliers, inverse MTS + LFNST, 4 samples/cycle</div></div>
+        <div class="counter acc"><div class="v" data-count="26">0</div><div class="k">multipliers, ALF decoder, 2 pixels/cycle</div></div>
+        <div class="counter"><div class="v" data-count="50.56" data-dec="2">0</div><div class="k">Kbit of RAM for ALF (−75 %)</div></div>
+        <div class="counter"><div class="v" data-count="9.6" data-dec="1">0</div><div class="k">mW, ALF decoder at 0.8 V</div></div>
+        <div class="counter"><div class="v" data-count="450">0</div><div class="k">MHz on TSMC 28 nm</div></div>
+        <div class="counter"><div class="v" data-count="100000" data-fmt="k">0</div><div class="k">random test vectors per transform module, bit-exact</div></div>
+        <div class="counter acc"><div class="v" data-count="3">0</div><div class="k">firsts: HW LFNST · complete HW ALF · HW ALF encoder</div></div>
+        <div class="counter"><div class="v" data-count="4">0</div><div class="k">papers: ICASSP 2020 · TCE 2021 · TCE 2022 · PCS 2022</div></div>
+      </div>
+      <figure><div id="hevcChart" class="chart"></div><figcaption>1-D inverse transform at 2 samples/cycle, gates after synthesis. Thesis Tables 6.10–6.11.</figcaption></figure>
+    </div>
+    <div class="text">
+      <span class="num">Scene 9 / 10</span>
+      <h2>The results</h2>
+      <p class="say">Every block: 450 MHz on 28 nm, <b>fixed latency</b>, <b>bit-exact</b> against the reference software, integrated in a professional real-time encoder and decoder. Four papers, three firsts.</p>
+      <div class="tools"><button class="btn small play" data-scene="09">▶ Listen</button><a class="btn small" href="explainer.html#step-19">Full scoreboard →</a></div>
+      <details class="deeper"><summary>Go deeper</summary>
+        <ul>
+          <li>Decoder: inverse MTS 64 RM, 138.9 Kgates; inverse LFNST 64 RM, 109.2 Kgates, 64 Kbit ROM; ALF 26 RM, 66,997 µm², 50.56 Kbit RAM, 9.6 mW at 0.8 V (6.7 mW at 0.65 V for +12 % area).</li>
+          <li>Encoder: transform loop as three chains of 32 samples/cycle with a shared DCT/iDCT core; ALF luma filter 24 RM, 41,984 µm², 13.6 mW; ALF decision (4 filters + SSD) 48 RM, 58,628 µm², 101.6 Kbit, 17.9 mW. Encoder ALF limited to luma, CTU 64 and 4 of 16 filter sets.</li>
+          <li>Verification: 100,000 pseudo-random vectors per transform module against VTM procedures; ALF against trace files from the instrumented software encoder, sequences from 64×64 to 1080p in 8, 10 and 12 bits.</li>
+          <li>Open roads named in the thesis: one 64-multiplier core for MTS and LFNST; a hybrid constant/regular-multiplier transform; learned pruning of the encoder's transform search; a chroma filter in the encoder ALF.</li>
+        </ul>
+        <p class="src"><b>Sources:</b> thesis §5.4, §6.5, §9.6, §10.4, Ch. 11; Appendix A.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="scene" id="s10" data-scene="10">
+  <div class="wrap">
+    <div class="visual">
+      <div class="cards">
+        <div class="card"><div class="n">Daniel Ménard</div><div class="r">Thesis director</div><div class="a">Professor, INSA Rennes / IETR (VAADER)</div></div>
+        <div class="card"><div class="n">Olivier Déforges</div><div class="r">Thesis co-director</div><div class="a">Professor, INSA Rennes / IETR</div></div>
+        <div class="card"><div class="n">Wassim Hamidouche</div><div class="r">Supervisor</div><div class="a">Associate Professor, INSA Rennes / IETR (VAADER)</div></div>
+      </div>
+    </div>
+    <div class="text">
+      <span class="num">Scene 10 / 10</span>
+      <h2>People and record</h2>
+      <p class="say">Directed by <b>Daniel Ménard</b> and <b>Olivier Déforges</b>, supervised by <b>Wassim Hamidouche</b>, at the IETR laboratory of INSA Rennes, with an industrial partner. Defended in Rennes on 31 May 2022.</p>
+      <div class="tools"><button class="btn small play" data-scene="10">▶ Listen</button></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<section class="record" id="record">
+  <div class="wrap">
+    <div class="eyebrow">Record</div>
+    <h2 style="margin-top:6px">The thesis, in one place</h2>
+    <dl class="kv">
+      <dt>Title</dt><dd>Efficient hardware designs of the new Versatile Video Coding (VVC) tools for ASIC platforms<br><span style="color:var(--muted)">Conceptions matérielles efficaces pour des nouveaux outils du standard VVC ciblant les plates-formes ASIC</span></dd>
+      <dt>Author</dt><dd>Ibrahim (Brahim) Farhat</dd>
+      <dt>Defended</dt><dd>31 May 2022, Rennes · NNT 2022ISAR0009 · HAL tel-04477217 · 190 pages, in English</dd>
+      <dt>Institution</dt><dd>INSA Rennes · IETR, UMR CNRS 6164 (VAADER team) · doctoral school ED 601 MathSTIC · speciality Signal, Image et Vision</dd>
+      <dt>Setting</dt><dd>Industrial PhD: the designs were integrated in the partner's real-time professional VVC encoder and decoder (AVC, HEVC and VVC on one chip)</dd>
+      <dt>Keywords</dt><dd>Video compression · VVC/H.266 · real-time implementation · ASIC · MTS · LFNST · ALF</dd>
+    </dl>
+    <h3 style="margin-top:26px">Publications from the thesis</h3>
+    <ol class="pubs">
+      <li><span class="tag">2020</span><div><b>Lightweight Hardware Implementation of VVC Transform Block for ASIC Decoder</b> · IEEE ICASSP 2020 · <a href="https://doi.org/10.1109/ICASSP40776.2020.9054281" target="_blank" rel="noopener">doi</a> · <a href="https://arxiv.org/abs/2002.07461" target="_blank" rel="noopener">open access</a></div></li>
+      <li><span class="tag">2021</span><div><b>Lightweight Hardware Transform Design for the Versatile Video Coding 4K ASIC Decoders</b> · IEEE Transactions on Consumer Electronics 67(4) · <a href="https://doi.org/10.1109/TCE.2021.3126549" target="_blank" rel="noopener">doi</a> · <a href="https://hal.science/hal-03443297" target="_blank" rel="noopener">open access</a></div></li>
+      <li><span class="tag">2022</span><div><b>Adaptive Loop Filter Hardware Design for 4K ASIC VVC Decoders</b> · IEEE Transactions on Consumer Electronics 68(2) · <a href="https://doi.org/10.1109/TCE.2022.3146272" target="_blank" rel="noopener">doi</a> · <a href="https://hal.science/hal-03544100" target="_blank" rel="noopener">open access</a></div></li>
+      <li><span class="tag">2022</span><div><b>Efficient HW Design of Adaptive Loop Filter for 4K ASIC VVC Encoder</b> · Picture Coding Symposium 2022 · <a href="https://doi.org/10.1109/PCS56426.2022.10018078" target="_blank" rel="noopener">doi</a> · <a href="https://hal.science/hal-04010994" target="_blank" rel="noopener">open access</a></div></li>
+    </ol>
+    <div class="links">
+      <a class="btn primary" href="https://theses.hal.science/tel-04477217" target="_blank" rel="noopener">Thesis manuscript (HAL, open access)</a>
+      <a class="btn" href="explainer.html">Narrated walkthrough · 21 steps, 30 min</a>
+      <a class="btn" href="platforms.html">The Silicon Ladder · CPU, GPU, FPGA, ASIC + quiz</a>
+      <a class="btn" href="https://scholar.google.com/citations?user=6gbNelQAAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+      <a class="btn" href="https://www.linkedin.com/in/ibrahim-farhat-470755115/" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<footer><div class="rainbow" aria-hidden="true"></div><div class="wrap">
+  <div>Built from the thesis manuscript (HAL tel-04477217) and its four papers. Figures in the “Go deeper” panels are reproduced from the manuscript; 3D scenes are illustrations of the mechanisms, with numbers taken from the thesis tables cited under each.</div>
+  <div>3D rendering: three.js. Voice: neural text-to-speech. Theme follows your system setting.</div>
+</div></footer>
+
+<audio id="aud" preload="none"></audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+(function(){
+  const SCENE_AUDIO = __SCENE_AUDIO__;
+  const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const T = window.THREE;
+  const fmt = (v, d) => Number(v).toLocaleString('en-US', {maximumFractionDigits: d == null ? 0 : d, minimumFractionDigits: d == null ? 0 : d});
+  const ease = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888888';
+  const hasGL = (() => { try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; } })();
+  const has3D = !!T && hasGL;
+  const PIX = 0.5; // render at half resolution and let CSS upscale without smoothing: the pixel look
+
+  /* ---------- shared 3D plumbing ---------- */
+  const MATS = [];
+  function mat(token, opts){
+    const m = new T.MeshStandardMaterial(Object.assign({color: new T.Color(cssVar(token)), roughness: 0.6, metalness: 0.05}, opts || {}));
+    m.userData.token = token; if (opts && opts.emissiveToken) { m.emissive = new T.Color(cssVar(opts.emissiveToken)); m.userData.emissiveToken = opts.emissiveToken; }
+    MATS.push(m); return m;
+  }
+  function recolor(){ MATS.forEach(m => { m.color.set(cssVar(m.userData.token)); if (m.userData.emissiveToken) m.emissive.set(cssVar(m.userData.emissiveToken)); }); VIEWS.forEach(v => v.render()); }
+  if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', recolor); }
+  new MutationObserver(recolor).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+
+  const VIEWS = [];
+  function view(id, cfg){
+    const host = document.getElementById(id); if (!host) return null;
+    if (!has3D) { host.classList.add('no3d'); return null; }
+    const renderer = new T.WebGLRenderer({antialias: false, alpha: true, powerPreference: 'low-power'});
+    renderer.setPixelRatio(PIX); renderer.outputEncoding = T.sRGBEncoding;
+    host.insertBefore(renderer.domElement, host.firstChild);
+    const scene = new T.Scene();
+    const camera = new T.PerspectiveCamera(cfg.fov || 32, 1, 0.1, 100);
+    camera.position.set.apply(camera.position, cfg.cam); camera.lookAt(new T.Vector3().fromArray(cfg.look || [0, 0, 0]));
+    scene.add(new T.HemisphereLight(0xffffff, 0x3a4252, 0.95));
+    const key = new T.DirectionalLight(0xffffff, 0.8); key.position.set(4, 9, 6); scene.add(key);
+    const fill = new T.DirectionalLight(0xffffff, 0.35); fill.position.set(-6, 4, -5); scene.add(fill);
+    const root = new T.Group(); scene.add(root);
+    const v = {id, host, renderer, scene, camera, root, ry: cfg.ry || 0, rx: cfg.rx || 0, spin: REDUCED ? 0 : (cfg.spin == null ? 0.12 : cfg.spin), t: 0, visible: false, labels: [], update: cfg.update || null, drag: false};
+    let px = 0, py = 0;
+    host.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; v.drag = true; px = e.clientX; py = e.clientY; try { host.setPointerCapture(e.pointerId); } catch (err) {} });
+    host.addEventListener('pointermove', e => { if (!v.drag) return; v.ry += (e.clientX - px) * 0.008; v.rx = clamp(v.rx + (e.clientY - py) * 0.004, -0.5, 0.9); px = e.clientX; py = e.clientY; if (!v.visible) v.render(); });
+    const up = () => { v.drag = false; }; host.addEventListener('pointerup', up); host.addEventListener('pointercancel', up); host.addEventListener('lostpointercapture', up);
+    function resize(){ const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%'; camera.aspect = w / h; camera.updateProjectionMatrix(); v.render(); }
+    new ResizeObserver(resize).observe(host);
+    v.label = (pos, text, cls) => { const el = document.createElement('div'); el.className = 'l3d' + (cls ? ' ' + cls : ''); el.textContent = text; host.appendChild(el); v.labels.push({pos: new T.Vector3().fromArray(pos), el}); return el; };
+    const tmp = new T.Vector3();
+    v.render = () => {
+      root.rotation.x = v.rx; root.rotation.y = v.ry; renderer.render(scene, camera);
+      const w = host.clientWidth, h = host.clientHeight;
+      v.labels.forEach(l => { tmp.copy(l.pos); root.localToWorld(tmp); tmp.project(camera); const x = (tmp.x * 0.5 + 0.5) * w, y = (-tmp.y * 0.5 + 0.5) * h; l.el.style.transform = 'translate(-50%,-50%) translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; l.el.style.opacity = tmp.z < 1 ? 1 : 0; });
+    };
+    VIEWS.push(v); if (cfg.build) cfg.build(v); resize();
+    return v;
+  }
+  let lastT = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+    VIEWS.forEach(v => { if (!v.visible) return; v.t += dt; if (!v.drag) v.ry += v.spin * dt; if (v.update) v.update(v.t, dt, v); v.render(); });
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(en => { const v = VIEWS.find(x => x.host === en.target); if (v) v.visible = en.isIntersecting; }), {threshold: 0.05});
+    VIEWS.forEach(v => io.observe(v.host));
+    const io2 = new IntersectionObserver(entries => entries.forEach(en => { const v = VIEWS.find(x => x.host === en.target); if (v) v.visible = en.isIntersecting; }), {threshold: 0.05});
+    window.__observe3d = h => io2.observe(h);
+  } else VIEWS.forEach(v => v.visible = true);
+
+  const box = (w, h, d, m, baseAnchored) => { const g = new T.BoxGeometry(w, h, d); if (baseAnchored) g.translate(0, h / 2, 0); return new T.Mesh(g, m); };
+
+  /* ---------- hero: the chip ---------- */
+  view('chip3d', {cam: [0, 9, 13], look: [0, 0, 0], fov: 30, spin: 0.1, ry: -0.55, build(v){
+    const die = box(12, 0.5, 8, mat('--c3-die', {roughness: 0.4, metalness: 0.3})); die.position.y = -0.25; v.root.add(die);
+    const pinM = mat('--c3-pin', {metalness: 0.6, roughness: 0.35});
+    for (let i = 0; i < 16; i++) { for (const s of [-1, 1]) { const p = box(0.32, 0.14, 0.5, pinM); p.position.set(-5.6 + i * 0.75, -0.4, s * 4.22); v.root.add(p); } }
+    for (let i = 0; i < 10; i++) { for (const s of [-1, 1]) { const p = box(0.5, 0.14, 0.32, pinM); p.position.set(s * 6.22, -0.4, -3.4 + i * 0.75); v.root.add(p); } }
+    const blockM = mat('--c3-block', {roughness: 0.7});
+    const accM = mat('--c3-accent', {emissiveToken: '--c3-glow', emissiveIntensity: 0.25, roughness: 0.5});
+    const B = [
+      ['Video input', -4.9, -2.9, 1.9, 1.2], ['Motion estimation', -4.9, -1.1, 1.9, 1.8], ['Intra / inter prediction', -4.9, 1.6, 1.9, 2.6],
+      ['Transform · MTS · LFNST', -2.5, -2.7, 2.2, 1.6, 1], ['Quantisation', -2.5, -0.95, 2.2, 1.0], ['Inverse transform · iMTS · iLFNST', -2.5, 1.0, 2.2, 2.0, 1],
+      ['Entropy coding', 0.1, -2.7, 2.2, 1.6], ['Deblocking · SAO', 0.1, -0.95, 2.2, 1.0], ['ALF filter · ALF decision', 0.1, 1.4, 2.2, 2.4, 1],
+      ['Reference picture memory', 2.9, -2.5, 2.4, 2.0], ['Control CPU · bitstream I/O', 2.9, 1.0, 2.4, 3.2], ['High-speed I/O', 5.1, 0, 1.4, 6.6]
+    ];
+    B.forEach(b => { const m = box(b[3], b[5] ? 0.62 : 0.42, b[4], b[5] ? accM : blockM, true); m.position.set(b[1], 0, b[2]); v.root.add(m); if (b[5] || /Prediction|Entropy|Control|Reference/.test(b[0])) v.label([b[1], (b[5] ? 0.62 : 0.42) + 0.35, b[2]], b[0], b[5] ? 'acc' : ''); });
+    v.accM = accM;
+  }, update(t, dt, v){ v.accM.emissiveIntensity = 0.22 + 0.18 * Math.sin(t * 2.2); }});
+
+  /* ---------- scene 1: bits per standard ---------- */
+  view('bits3d', {cam: [0, 8, 20], look: [0, 2.4, 0], fov: 28, spin: 0.08, ry: -0.35, build(v){
+    const greyM = mat('--c3-block'), accM = mat('--c3-accent'), blueM = mat('--c3-blue');
+    const cols = [['AVC', -6.2, 20, greyM, '100'], ['HEVC', -3.6, 10, greyM, '50'], ['VVC', -1.0, 6, accM, '≈ 25–30'], ['HEVC enc.', 2.4, 2, blueM, '1×'], ['VVC enc.', 5.0, 20, blueM, '≈ 10×']];
+    v.slabs = [];
+    cols.forEach(c => { for (let i = 0; i < c[2]; i++) { const s = box(1.6, 0.22, 1.6, c[3]); s.position.set(c[1], 0.13 + i * 0.26, 0); s.scale.y = 0.001; v.root.add(s); v.slabs.push({m: s, i, n: c[2], col: c}); } v.label([c[1], -0.6, 1.1], c[0] + ' · ' + c[4], c[3] === accM ? 'acc' : ''); });
+    v.label([-3.6, 6.3, 0], 'bits for the same quality');
+    v.label([3.7, 6.3, 0], 'encoder computation');
+    const floor = box(14, 0.08, 3.4, mat('--c3-rail')); floor.position.set(-0.6, -0.04, 0); v.root.add(floor);
+  }, update(t, dt, v){
+    const cyc = t % 9; const build = clamp(cyc / 3.2, 0, 1), fade = cyc > 8.2 ? 1 - (cyc - 8.2) / 0.8 : 1;
+    v.slabs.forEach(s => { const k = clamp(build * 22 - s.i, 0, 1); s.m.scale.y = Math.max(0.001, ease(k) * fade); });
+  }});
+
+  /* ---------- scene 2: energy compaction ---------- */
+  view('dct3d', {cam: [0, 12, 14.5], look: [0, 0.8, 0], fov: 30, spin: 0.06, ry: 0.6, build(v){
+    const N = 8, noise = (i, j) => { const x = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return x - Math.floor(x); };
+    const pix = [], res = []; for (let i = 0; i < N; i++) { pix[i] = []; res[i] = []; for (let j = 0; j < N; j++) { const pred = 110 + 60 * ((i + j) / 14); const texture = 26 * Math.sin(j * 1.25 + i * 0.35) + (noise(i, j) - 0.5) * 14; pix[i][j] = clamp(pred + texture, 0, 255); res[i][j] = pix[i][j] - pred; } }
+    const c = k => k === 0 ? Math.sqrt(1 / N) : Math.sqrt(2 / N);
+    const coef = []; for (let u = 0; u < N; u++) { coef[u] = []; for (let w = 0; w < N; w++) { let s = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) s += res[i][j] * Math.cos((2 * i + 1) * u * Math.PI / (2 * N)) * Math.cos((2 * j + 1) * w * Math.PI / (2 * N)); coef[u][w] = c(u) * c(w) * s; } }
+    const Q = 16, quant = coef.map(r => r.map(x => Math.round(x / Q) * Q)); let nz = 0; quant.forEach(r => r.forEach(x => { if (x !== 0) nz++; }));
+    let maxC = 1; coef.forEach(r => r.forEach(x => maxC = Math.max(maxC, Math.abs(x))));
+    const H = 2.6;
+    const states = [
+      {h: (i, j) => pix[i][j] / 255 * H, col: () => 0, label: '1 · an 8×8 block of pixels (brightness as height)'},
+      {h: (i, j) => Math.abs(res[i][j]) / 40 * H, col: (i, j) => res[i][j] >= 0 ? 1 : 2, label: '2 · residual after prediction: small, with sign'},
+      {h: (i, j) => Math.abs(coef[i][j]) / maxC * H, col: () => 1, label: '3 · transform (2-D DCT): the energy gathers in the top-left corner'},
+      {h: (i, j) => Math.max(0.015, Math.abs(quant[i][j]) / maxC * H), col: (i, j) => quant[i][j] !== 0 ? 1 : 3, label: '4 · quantised (step 16): ' + nz + ' of 64 coefficients remain, ' + (64 - nz) + ' are zero'}
+    ];
+    const mats = [mat('--c3-block'), mat('--c3-accent'), mat('--c3-blue'), mat('--c3-dim')];
+    v.cells = []; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const m = box(0.78, 1, 0.78, mats[0], true); m.position.set(j - 3.5, 0, i - 3.5); m.scale.y = states[0].h(i, j); v.root.add(m); v.cells.push({m, i, j, from: m.scale.y, to: m.scale.y}); }
+    const floor = box(8.6, 0.06, 8.6, mat('--c3-rail')); floor.position.y = -0.03; v.root.add(floor);
+    v.label([-2.6, 0.2, -4.4], 'top-left: low frequencies');
+    v.states = states; v.mats = mats; v.state = 0; v.phase = 0; v.labelEl = document.getElementById('dctLabel');
+  }, update(t, dt, v){
+    const HOLD = 2.4, TW = REDUCED ? 0.01 : 0.9, period = HOLD + TW, k = Math.floor(t / period) % 4, ph = (t % period);
+    if (k !== v.state) { v.state = k; const st = v.states[k]; v.cells.forEach(c => { c.from = c.m.scale.y; c.to = st.h(c.i, c.j); c.m.material = v.mats[st.col(c.i, c.j)]; }); v.labelEl.textContent = st.label; }
+    const e = ease(clamp(ph / TW, 0, 1)); v.cells.forEach(c => { c.m.scale.y = Math.max(0.015, c.from + (c.to - c.from) * e); });
+  }});
+
+  /* ---------- scene 5: samples per cycle ---------- */
+  view('flow3d', {cam: [0, 7.5, 19.5], look: [0, 0.6, 0], fov: 30, spin: 0, ry: 0.28, rx: 0.08, build(v){
+    const rail = box(15, 0.1, 3.4, mat('--c3-rail')); rail.position.y = -0.05; v.root.add(rail);
+    const stM = () => mat('--c3-blue', {transparent: true, opacity: 0.55, emissiveToken: '--c3-blue', emissiveIntensity: 0});
+    v.stages = [[-4.2, 'inverse LFNST'], [0, '1-D inverse MTS'], [4.2, 'transpose memory']].map(s => { const m = box(1.7, 1.5, 3.0, stM(), true); m.position.set(s[0], 0, 0); v.root.add(m); v.label([s[0], 1.95, 0], s[1]); return {m, x: s[0], glow: 0}; });
+    v.label([-6.2, 3.2, 0], '4 samples per cycle', 'acc');
+    const sM = mat('--c3-accent'); v.pool = []; for (let i = 0; i < 64; i++) { const c = box(0.32, 0.32, 0.32, sM); c.visible = false; v.root.add(c); v.pool.push({m: c, on: false, x: 0, lane: 0}); }
+    v.tick = 0; v.cycles = 0; v.clock = document.getElementById('flowClock'); v.lanes = [-1.05, -0.35, 0.35, 1.05];
+  }, update(t, dt, v){
+    const TICK = REDUCED ? 0.9 : 0.5, SPEED = 4.6; v.tick += dt;
+    if (v.tick >= TICK) { v.tick -= TICK; v.cycles++; for (let l = 0; l < 4; l++) { const s = v.pool.find(p => !p.on); if (!s) break; s.on = true; s.x = -7.3; s.lane = l; s.m.visible = true; s.m.position.set(s.x, 0.4, v.lanes[l]); } v.clock.textContent = 'cycle ' + fmt(v.cycles) + ' · ' + fmt(v.cycles * 4) + ' samples · slowed down about a billion times'; }
+    v.pool.forEach(p => { if (!p.on) return; p.x += SPEED * dt; p.m.position.x = p.x; v.stages.forEach(s => { if (Math.abs(p.x - s.x) < 0.1) s.glow = 1; }); if (p.x > 7.4) { p.on = false; p.m.visible = false; } });
+    v.stages.forEach(s => { s.glow = Math.max(0, s.glow - dt * 2.5); s.m.material.emissiveIntensity = s.glow * 0.6; s.m.material.opacity = 0.5 + s.glow * 0.3; });
+  }});
+
+  /* ---------- scene 6: multiplier pools ---------- */
+  view('mult3d', {cam: [0, 9.5, 16.5], look: [0, 0.6, -0.3], fov: 30, spin: 0.05, ry: -0.3, build(v){
+    const rom = box(10, 1.7, 0.45, mat('--c3-blue', {roughness: 0.5}), true); rom.position.set(0, 0, -2.9); v.root.add(rom); v.label([0, 2.1, -2.9], 'ROM · 1,872 coefficients · 17.9 Kbit');
+    const floor = box(11, 0.06, 7, mat('--c3-rail')); floor.position.set(0, -0.03, 0.2); v.root.add(floor);
+    v.pools = []; for (let p = 0; p < 4; p++) { const x0 = -4.5 + p * 3; const pm = mat('--c3-block', {emissiveToken: '--c3-glow', emissiveIntensity: 0}); for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) { const c = box(0.5, 0.5, 0.5, pm, true); c.position.set(x0 - 0.93 + a * 0.62, 0, -0.93 + b * 0.62); v.root.add(c); } v.label([x0, -0.3, 1.5], 'pool ' + (p + 1) + ' · 16 multipliers'); v.pools.push({x: x0, m: pm, glow: 0}); }
+    const sM = mat('--c3-accent'), bM = mat('--c3-blue', {transparent: true, opacity: 0.8}), oM = mat('--c3-green');
+    v.samples = v.pools.map(p => { const s = new T.Mesh(new T.SphereGeometry(0.24, 18, 14), sM); s.position.set(p.x, 3.4, 0); v.root.add(s); return s; });
+    v.beams = v.pools.map(p => { const b = box(0.1, 0.1, 2.6, bM); b.position.set(p.x, 0.9, -1.35); b.scale.z = 0.001; v.root.add(b); return b; });
+    v.outs = v.pools.map(p => { const o = box(0.34, 0.34, 0.34, oM); o.position.set(p.x, 0.3, 1.5); o.visible = false; v.root.add(o); return o; });
+    v.label([0, 1.0, 3.4], '4 results per cycle → transpose memory', 'acc');
+  }, update(t, dt, v){
+    const P = REDUCED ? 2.0 : 1.3, ph = (t % P) / P;
+    v.pools.forEach((p, i) => {
+      const s = v.samples[i]; const fall = clamp(ph / 0.4, 0, 1); s.position.y = 3.4 - ease(fall) * 2.5; s.visible = ph < 0.42;
+      const beam = v.beams[i]; const bz = clamp((ph - 0.05) / 0.3, 0, 1); beam.scale.z = Math.max(0.001, bz < 1 ? bz : 1 - clamp((ph - 0.45) / 0.15, 0, 1)); beam.position.z = -2.65 + 1.3 * beam.scale.z;
+      p.m.emissiveIntensity = ph > 0.4 && ph < 0.65 ? 0.9 * (1 - (ph - 0.4) / 0.25) : 0;
+      const o = v.outs[i]; const oz = clamp((ph - 0.5) / 0.5, 0, 1); o.visible = ph > 0.5; o.position.z = 1.2 + oz * 2.3; o.position.y = 0.3;
+    });
+  }});
+
+  /* ---------- scene 7: ALF diamond ---------- */
+  view('alf3d', {cam: [0, 10, 13], look: [1.0, 0.5, 0.3], fov: 30, spin: 0.08, ry: 0.5, build(v){
+    const C = {0: .14, 1: .1, 2: .34, 3: .2, 4: .08, 5: .3, 6: .52, 7: .26, 8: .12, 9: .16, 10: .28, 11: .6, 12: 1};
+    const idx = [[null, null, null, 0, null, null, null], [null, null, 1, 2, 3, null, null], [null, 4, 5, 6, 7, 8, null], [9, 10, 11, 12, 11, 10, 9], [null, 8, 7, 6, 5, 4, null], [null, null, 3, 2, 1, null, null], [null, null, null, 0, null, null, null]];
+    const f = (k, l) => (idx[k] && idx[k][l] != null) ? C[idx[k][l]] : null;
+    const N = 7, H = 2.4;
+    const xf = [['class 3 · no transform', (k, l) => f(k, l)], ['class 12 · rotation', (k, l) => f(N - l - 1, k)], ['class 17 · vertical flip', (k, l) => f(k, N - l - 1)], ['class 21 · diagonal flip', (k, l) => f(l, k)]];
+    const accM = mat('--c3-accent'), cM = mat('--c3-block'); v.taps = [];
+    for (let k = 0; k < N; k++) for (let l = 0; l < N; l++) { if (f(k, l) == null) continue; const m = box(0.72, 1, 0.72, idx[k][l] === 12 ? accM : cM, true); m.position.set(l - 3, 0, k - 3); m.scale.y = f(k, l) * H; v.root.add(m); v.taps.push({m, k, l, from: m.scale.y, to: m.scale.y}); }
+    const Cc = {0: .15, 1: .12, 2: .35, 3: .2, 4: .18, 5: .45, 6: 1}, idc = [[null, null, 0, null, null], [null, 1, 2, 3, null], [4, 5, 6, 5, 4], [null, 3, 2, 1, null], [null, null, 0, null, null]];
+    for (let k = 0; k < 5; k++) for (let l = 0; l < 5; l++) { if (idc[k][l] == null) continue; const m = box(0.45, 1, 0.45, idc[k][l] === 6 ? accM : cM, true); m.position.set(5.2 + (l - 2) * 0.5, 0, (k - 2) * 0.5 + 1.5); m.scale.y = Cc[idc[k][l]] * H * 0.5; v.root.add(m); }
+    const floor = box(12.2, 0.06, 7.4, mat('--c3-rail')); floor.position.set(1.2, -0.03, 0); v.root.add(floor);
+    v.label([0, -0.3, 3.6], 'luma 7×7 · 25 taps · 12 coefficients', 'acc'); v.label([5.2, -0.3, 3.2], 'chroma 5×5 · 6 coefficients');
+    v.xf = xf; v.state = 0; v.labelEl = document.getElementById('alfLabel'); v.H = H;
+  }, update(t, dt, v){
+    const HOLD = 2.2, TW = REDUCED ? 0.01 : 0.8, period = HOLD + TW, k = Math.floor(t / period) % 4, ph = t % period;
+    if (k !== v.state) { v.state = k; const g = v.xf[k][1]; v.taps.forEach(tp => { tp.from = tp.m.scale.y; tp.to = (g(tp.k, tp.l) || 0.05) * v.H; }); v.labelEl.textContent = v.xf[k][0]; }
+    const e = ease(clamp(ph / TW, 0, 1)); v.taps.forEach(tp => { tp.m.scale.y = Math.max(0.02, tp.from + (tp.to - tp.from) * e); });
+  }});
+
+  /* ---------- scene 8: scanning order ---------- */
+  view('scan3d', {cam: [0.3, 13, 13], look: [0.3, 0, 0.3], fov: 30, spin: 0, ry: 0.0, rx: 0.0, build(v){
+    const dimY = mat('--c3-dim'), dimCr = mat('--c3-dim'), dimCb = mat('--c3-dim');
+    const Y = mat('--c3-y'), Cr = mat('--c3-cr'), Cb = mat('--c3-cb');
+    const held = {Y: mat('--c3-y', {emissiveToken: '--c3-glow', emissiveIntensity: 0.55}), Cr: mat('--c3-cr', {emissiveToken: '--c3-glow', emissiveIntensity: 0.5}), Cb: mat('--c3-cb', {emissiveToken: '--c3-glow', emissiveIntensity: 0.5})};
+    const bright = {Y, Cr, Cb}, dim = {Y: dimY, Cr: dimCr, Cb: dimCb};
+    v.tiles = {Y: [], Cr: [], Cb: []};
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const m = box(0.82, 0.26, 0.82, dimY); m.position.set(-5.55 + c * 0.9, 0.13, -3.15 + r * 0.9); v.root.add(m); v.tiles.Y.push({m, r, c, comp: 'Y'}); }
+    for (const [comp, zoff] of [['Cr', -3.5], ['Cb', 0.1]]) for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { const m = box(0.82, 0.26, 0.38, dim[comp]); m.position.set(2.3 + c * 0.9, 0.13, zoff + 0.2 + r * 0.45); v.root.add(m); v.tiles[comp].push({m, r, c, comp}); }
+    const floor = box(11.4, 0.06, 8, mat('--c3-rail')); floor.position.set(0.2, -0.03, 0); v.root.add(floor);
+    v.label([-2.4, 0.5, -4.1], 'Y · 64 blocks of 4×4'); v.label([3.65, 0.5, -4.1], 'Cr · 32 blocks of 4×2'); v.label([3.65, 0.5, 4.0], 'Cb · 32 blocks of 4×2');
+    v.mats = {bright, dim, held};
+    const orders = {
+      A: {name: 'A · all luma, then Cr, then Cb', mem: 193.28, seq: [].concat(v.tiles.Y, v.tiles.Cr, v.tiles.Cb), hold: (tile, i, cur) => tile.comp === 'Y' ? cur < 64 + 64 : (cur - i) < 8},
+      B: {name: 'B · Cr, then Cb, then luma', mem: 213.12, seq: [].concat(v.tiles.Cr, v.tiles.Cb, v.tiles.Y), hold: (tile, i, cur) => tile.comp !== 'Y' ? cur < 128 : (cur - i) < 16},
+      C: {name: 'C · Cr, Cb, Y, Y per line (proposed)', mem: 50.56, seq: [], hold: (tile, i, cur) => (cur - i) < 16}
+    };
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { orders.C.seq.push(v.tiles.Cr[r * 4 + c], v.tiles.Cb[r * 4 + c], v.tiles.Y[r * 8 + 2 * c], v.tiles.Y[r * 8 + 2 * c + 1]); }
+    v.orders = orders; v.order = 'C'; v.cur = 0; v.acc = 0; v.pause = 0; v.auto = true;
+    v.memBar = document.getElementById('memBar'); v.memVal = document.getElementById('memVal'); v.labelEl = document.getElementById('scanLabel');
+    const tools = document.getElementById('scanTools');
+    tools.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; v.auto = false; v.set(b.dataset.order); });
+    v.set = o => { v.order = o; v.cur = 0; v.acc = 0; v.pause = 0; tools.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.order === o))); v.labelEl.textContent = v.orders[o].name; Object.values(v.tiles).flat().forEach(t => { t.m.material = dim[t.comp]; t.m.position.y = 0.13; }); };
+    v.set('C');
+  }, update(t, dt, v){
+    const o = v.orders[v.order], STEP = REDUCED ? 0.12 : 0.055;
+    if (v.cur >= o.seq.length) { v.pause += dt; if (v.pause > 2.2) { if (v.auto) { const next = {A: 'B', B: 'C', C: 'A'}[v.order]; v.set(next); } else v.set(v.order); } }
+    else { v.acc += dt; while (v.acc >= STEP && v.cur < o.seq.length) { v.acc -= STEP; v.cur++; } }
+    const cur = v.cur;
+    o.seq.forEach((tile, i) => { if (i >= cur) return; const h = o.hold(tile, i, cur) && cur < o.seq.length + 1; tile.m.material = h ? v.mats.held[tile.comp] : v.mats.bright[tile.comp]; tile.m.position.y = h ? 0.45 : 0.13; });
+    const frac = Math.min(1, cur / o.seq.length), kb = o.mem * frac;
+    v.memBar.style.width = (kb / 213.12 * 100).toFixed(1) + '%'; v.memVal.textContent = fmt(kb, 1) + ' Kbit';
+  }});
+
+  /* ---------- animated SVG charts ---------- */
+  function logBars(el, rows, opt){
+    const W = 600, left = 8, right = 96, labelH = 18, barH = 14, rowH = 46, top = 6, lo = Math.log10(opt.min), hi = Math.log10(opt.max), span = W - left - right, H = top + rows.length * rowH + 28;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + opt.title + '">';
+    rows.forEach((r, i) => { const y = top + i * rowH, by = y + labelH + 4, w = Math.max(6, span * (Math.log10(r.value) - lo) / (hi - lo)); s += '<text x="' + left + '" y="' + (y + 13) + '" class="lbl">' + r.label + '</text><rect class="bar' + (r.cls ? ' ' + r.cls : '') + '" x="' + left + '" y="' + by + '" width="0" height="' + barH + '" rx="0" data-w="' + w.toFixed(1) + '"></rect><text x="' + (left + 8) + '" y="' + (by + barH - 3) + '" class="val" data-x="' + (left + w + 8).toFixed(1) + '">' + (r.text || fmt(r.value)) + '</text>'; });
+    const ay = H - 14; s += '<line class="axis" x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + ay + '"/>';
+    for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) { const x = left + span * (e - lo) / (hi - lo); s += '<line class="grid" x1="' + x + '" y1="' + top + '" x2="' + x + '" y2="' + ay + '"/><text x="' + x + '" y="' + (ay + 12) + '" text-anchor="middle" class="small">' + fmt(Math.pow(10, e)) + (e === Math.floor(hi) ? ' ×' : '') + '</text>'; }
+    s += '</svg>'; el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">' + opt.title + '</div>' + s;
+  }
+  function linBars(el, rows, opt){
+    const W = 600, left = 8, right = 110, labelH = 18, barH = 14, rowH = 46, top = 6, span = W - left - right, max = Math.max.apply(null, rows.map(r => r.value)), H = top + rows.length * rowH + 4;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + opt.title + '">';
+    rows.forEach((r, i) => { const y = top + i * rowH, by = y + labelH + 4, w = Math.max(6, span * r.value / max); s += '<text x="' + left + '" y="' + (y + 13) + '" class="lbl">' + r.label + '</text><rect class="bar' + (r.cls ? ' ' + r.cls : '') + '" x="' + left + '" y="' + by + '" width="0" height="' + barH + '" rx="0" data-w="' + w.toFixed(1) + '"></rect><text x="' + (left + 8) + '" y="' + (by + barH - 3) + '" class="val" data-x="' + (left + w + 8).toFixed(1) + '">' + (r.text || fmt(r.value)) + '</text>'; });
+    s += '<line class="axis" x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (H - 4) + '"/></svg>'; el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">' + opt.title + '</div>' + s;
+  }
+  logBars(document.getElementById('energyChart'), [
+    {label: 'General-purpose processor (4-way out-of-order CPU)', value: 500, text: '≈ 500×', cls: 'blue'},
+    {label: '+ SIMD and VLIW extensions', value: 50, text: '≈ 50×', cls: 'blue'},
+    {label: 'FPGA, same logic (dynamic power, Kuon & Rose 2007)', value: 14, text: '≈ 14×'},
+    {label: 'ASIC', value: 1, text: '1×', cls: 'emph'}
+  ], {min: 0.5, max: 1000, title: 'Energy for the same H.264 encoding, relative to an ASIC'});
+  linBars(document.getElementById('rmChart'), [
+    {label: 'Constant multipliers (shift-and-add, one module per size and type)', value: 266315},
+    {label: 'Regular multipliers (32 shared, coefficients in ROM)', value: 96849, text: '96,849 · −63 %', cls: 'emph'}
+  ], {title: 'Same function, same throughput: cell area'});
+  linBars(document.getElementById('hevcChart'), [
+    {label: 'HEVC: DCT-2 + DST-7 (constant multipliers)', value: 41500},
+    {label: 'VVC: MTS only (regular multipliers)', value: 89082, text: '89,082 · ≈ 2×'},
+    {label: 'VVC: MTS + LFNST (regular multipliers)', value: 163672, text: '163,672 · ≈ 4×', cls: 'emph'}
+  ], {title: 'What the VVC transform costs next to HEVC’s (gates)'});
+
+  function tween(dur, fn){ const t0 = performance.now(); if (REDUCED) { fn(1); return; } (function step(now){ const k = clamp((now - t0) / dur, 0, 1); fn(ease(k)); if (k < 1) requestAnimationFrame(step); })(t0); }
+  function animateChart(el){ el.querySelectorAll('rect.bar').forEach((r, i) => { const w = parseFloat(r.dataset.w), txt = r.nextElementSibling, x1 = parseFloat(txt.dataset.x); setTimeout(() => tween(900, k => { r.setAttribute('width', (w * k).toFixed(1)); txt.setAttribute('x', (8 + 8 + (x1 - 16) * k).toFixed(1)); }), i * 140); }); }
+  function animateCounters(el){ el.querySelectorAll('[data-count]').forEach((c, i) => { const to = parseFloat(c.dataset.count), dec = parseInt(c.dataset.dec || '0', 10), f = c.dataset.fmt; setTimeout(() => tween(1100, k => { const val = to * k; c.textContent = f === 'k' ? fmt(Math.round(val / 1000)) + 'k' : fmt(val, dec); }), i * 90); }); }
+  if ('IntersectionObserver' in window) {
+    const seen = new Set(); const io = new IntersectionObserver(entries => entries.forEach(en => { if (!en.isIntersecting || seen.has(en.target)) return; seen.add(en.target); if (en.target.classList.contains('chart')) animateChart(en.target); else animateCounters(en.target); }), {threshold: 0.3});
+    document.querySelectorAll('.chart, #counters').forEach(e => io.observe(e));
+  } else { document.querySelectorAll('.chart').forEach(animateChart); animateCounters(document.getElementById('counters')); }
+
+  /* ---------- pixel mosaic strip: blocks of the five gradient colours, deterministic pattern ---------- */
+  (function(){ const el = document.getElementById('mosaic'); if (!el) return; const cols = ['#FFD800', '#FFAF00', '#FF8205', '#FA500F', '#E10500']; const n = 120, rows = 2; let seed = 7; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    let r = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < n; i++) { const band = i / n; const k = Math.min(4, Math.floor(band * 5 + (rnd() - 0.5) * 1.6)); const keep = rnd() > (j === 0 ? 0.45 : 0.15); if (keep) r += '<rect x="' + i + '" y="' + j + '" width="1" height="1" fill="' + cols[Math.max(0, k)] + '"/>'; }
+    el.innerHTML = '<svg viewBox="0 0 ' + n + ' ' + rows + '" preserveAspectRatio="none" shape-rendering="crispEdges">' + r + '</svg>'; })();
+
+  /* ---------- dot rail + active scene ---------- */
+  const scenes = Array.from(document.querySelectorAll('.scene'));
+  const rail = document.getElementById('rail');
+  rail.innerHTML = scenes.map(s => '<a href="#' + s.id + '" title="' + s.querySelector('h2').textContent + '" aria-label="' + s.querySelector('h2').textContent + '"></a>').join('');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(en => { if (en.isIntersecting) rail.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id)); }), {rootMargin: '-45% 0px -45% 0px', threshold: 0});
+    scenes.forEach(s => io.observe(s));
+  }
+
+  /* ---------- narration ---------- */
+  const aud = document.getElementById('aud'); let queue = [], current = null;
+  const ids = scenes.map(s => s.dataset.scene);
+  const total = ids.reduce((n, id) => n + (SCENE_AUDIO[id] || 0), 0);
+  const playAll = document.getElementById('playAll');
+  if (total) document.getElementById('playAllTime').textContent = '· ' + Math.round(total / 60) + ' min'; else playAll.hidden = true;
+  document.querySelectorAll('.play').forEach(b => { const d = SCENE_AUDIO[b.dataset.scene]; if (!d) { b.hidden = true; return; } b.textContent = '▶ Listen · ' + Math.floor(d / 60) + ':' + String(Math.round(d % 60)).padStart(2, '0'); });
+  function setBtn(id, on){ document.querySelectorAll('.play').forEach(b => { if (b.dataset.scene !== id) return; const d = SCENE_AUDIO[id] || 0; b.textContent = (on ? '⏸ Playing' : '▶ Listen') + ' · ' + Math.floor(d / 60) + ':' + String(Math.round(d % 60)).padStart(2, '0'); }); }
+  function play(id, scroll){ if (current) setBtn(current, false); current = id; aud.src = 'assets/audio/scene-' + id + '.mp3'; const p = aud.play(); if (p && p.catch) p.catch(() => {}); setBtn(id, true); if (scroll) { const sec = document.getElementById('s' + Number(id)); if (sec) sec.scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth', block: 'start'}); } }
+  function stop(){ aud.pause(); if (current) setBtn(current, false); current = null; queue = []; playAll.textContent = '▶ Play the story · ' + Math.round(total / 60) + ' min'; }
+  aud.addEventListener('ended', () => { if (current) setBtn(current, false); current = null; if (queue.length) play(queue.shift(), true); else playAll.textContent = '▶ Play the story · ' + Math.round(total / 60) + ' min'; });
+  aud.addEventListener('error', () => { stop(); });
+  document.addEventListener('click', e => { const b = e.target.closest('.play'); if (!b) return; if (current === b.dataset.scene && !aud.paused) { aud.pause(); setBtn(current, false); current = null; } else { queue = []; play(b.dataset.scene, false); } });
+  playAll.addEventListener('click', () => { if (current || queue.length) { stop(); return; } queue = ids.slice(1); playAll.textContent = '⏹ Stop'; play(ids[0], true); });
+})();
+</script>

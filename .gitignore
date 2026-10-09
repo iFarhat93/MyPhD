@@ -1,0 +1,17 @@
+# regenerable intermediate outputs
+work/
+site/
+__pycache__/
+*.pyc
+
+# source material stays local: the thesis and papers are open access on HAL/arXiv (link, don't redistribute),
+# and the HAL metadata lists people the public site deliberately does not name
+sources/
+/TheseDEF_Ibrahim_FARHAT.pdf
+*.pdf
+
+# tool state, editor, OS
+.claude/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,577 @@
+<title>VVC Tools in Silicon</title>
+<style>
+/* Layout: a datasheet-like masthead carrying the codec pipeline, a sticky step rail beside a long reading stage, and a bottom narration bar. */
+:root{
+  --bg:#FFFAEB; --surface:#FFFFFF; --surface-2:#FFF0C3; --fg:#1E1E1E; --muted:#6b6557; --line:#E9E2CB; --grid:rgba(30,30,30,.06); --bar:#CFC5A7; --pixel:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --accent:#FA500F; --accent-ink:#FFFAEB; --blue:#1E1E1E; --green:#1f7a4d; --focus:#FA500F;
+  --display:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --body:Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --mono:ui-monospace,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337; --grid:rgba(255,250,235,.05); --bar:#6b6557;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --blue:#FFFAEB; --green:#5bd39a; --focus:#FF8205; color-scheme:dark }
+}
+:root[data-theme="dark"]{ --bg:#1E1E1E; --surface:#262320; --surface-2:#332e27; --fg:#FFFAEB; --muted:#b5ad99; --line:#4a4337; --grid:rgba(255,250,235,.05); --bar:#6b6557;
+    --accent:#FF8205; --accent-ink:#1E1E1E; --blue:#FFFAEB; --green:#5bd39a; --focus:#FF8205; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;padding-block:0 110px}
+a{color:var(--blue)}
+h1,h2,h3{font-family:var(--display);line-height:1.12;text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(1.7rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(1.35rem,2.3vw,1.8rem);font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1200px;margin-inline:auto;padding-inline:clamp(16px,3vw,32px);min-width:0}
+.eyebrow{font-family:var(--pixel);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+.btn{border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 13px;border-radius:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1.2}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.small{padding:4px 9px;font-size:.88rem;border-radius:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+.sr{position:absolute;left:-9999px}
+
+/* masthead */
+.masthead{background:var(--surface);border-bottom:1px solid var(--line);padding-block:28px 24px}
+.masthead .top{display:grid;gap:14px}
+.byline{color:var(--muted);font-size:.95rem}
+.byline b{color:var(--fg);font-weight:600}
+.lede{max-width:68ch;font-size:1.06rem}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:0;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface-2);font-weight:600}
+.actions > *{min-width:0;max-width:100%}
+#jump{max-width:min(56vw,280px);border:0;background:transparent;padding:2px 0}
+.top{min-width:0}
+.pipeline{margin-top:22px;border-top:1px dashed var(--line);padding-top:16px}
+.pipeline .eyebrow{margin-bottom:6px}
+.pipeline svg{width:100%;height:auto;max-width:100%;display:block}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px}
+.fact{border:1px solid var(--line);border-radius:0;padding:10px 12px;background:var(--bg)}
+.fact .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-family:var(--display);font-size:1.25rem;font-weight:700;margin-top:2px}
+.fact .s{font-size:.82rem;color:var(--muted)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:270px minmax(0,1fr);gap:36px;padding-top:28px}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 150px);overflow:auto;padding-right:6px;font-size:.9rem}
+.rail-part{margin-bottom:14px}
+.rail-part-title{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:4px 8px}
+.rail-steps{list-style:none;margin:0;padding:0}
+.rail-link{display:grid;grid-template-columns:26px 1fr auto;gap:6px;align-items:baseline;padding:5px 8px;border-radius:0;color:var(--fg);text-decoration:none}
+.rail-link:hover{background:var(--surface)}
+.rail-link.active{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+.rail-num{font-family:var(--mono);color:var(--muted);font-size:.8rem}
+.rail-link.done .rail-num{color:var(--green)}
+.rail-dur{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.stage{min-width:0}
+.intro{padding-bottom:26px}
+.intro p{max-width:70ch}
+.intro .how{display:grid;gap:6px;margin-top:10px;color:var(--muted);font-size:.95rem}
+
+/* steps */
+.step{padding-block:34px 26px;border-top:1px solid var(--line);scroll-margin-top:12px}
+.step-head{display:grid;gap:8px}
+.step-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.part-tag{padding:2px 7px;border-radius:0;border:1px solid var(--line)}
+.part-tag.C{border-color:var(--blue);color:var(--blue)}
+.part-tag.D{border-color:var(--green);color:var(--green)}
+.step.current .step-head h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:10px;vertical-align:middle}
+.kicker{color:var(--muted);font-size:1rem}
+.step-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.step-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:28px;margin-top:18px}
+.step-main{min-width:0}
+.points{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.points li{position:relative;padding-left:20px;max-width:62ch}
+.points li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:9px;background:var(--accent);border-radius:0}
+.expert{margin-top:16px;border:1px solid var(--line);border-radius:0;background:var(--surface);padding:0 14px}
+.expert summary{cursor:pointer;padding:10px 0;font-weight:600;font-family:var(--display)}
+.expert > p, .expert > ul{padding-bottom:12px;max-width:68ch;font-size:.95rem}
+.sources{margin-top:12px;font-size:.85rem;color:var(--muted)}
+.sources b{color:var(--fg);font-weight:600}
+.step-figs{display:grid;gap:14px;align-content:start;min-width:0}
+.fig{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:0;padding:10px;min-width:0}
+.fig img{display:block;width:100%;height:auto;cursor:zoom-in;border-radius:0}
+.fig figcaption{font-size:.85rem;color:var(--muted);margin-top:8px;line-height:1.4}
+.fig figcaption .src{display:block;font-family:var(--mono);font-size:.74rem;margin-top:3px}
+.fig svg{width:100%;height:auto;max-width:100%;display:block}
+.fig .chart-title{font-weight:600;font-size:.92rem;margin-bottom:6px}
+.fig .chart-note{font-size:.82rem;color:var(--muted);margin-top:4px}
+.barchart .lbl{fill:var(--fg);font-family:var(--body);font-size:12.5px}
+.barchart .val{fill:var(--fg);font-family:var(--mono);font-size:12.5px}
+.barchart .bar{fill:var(--bar);stroke:none}
+.barchart .bar.emph{fill:var(--accent);stroke:none}
+.barchart .axis{stroke:var(--line);stroke-width:1}
+.diagram svg text{font-family:var(--body);font-size:12px;fill:currentColor}
+.diagram svg .small{font-size:11px;fill:var(--muted)}
+.diagram svg .box{fill:var(--surface);stroke:currentColor;stroke-width:1.2}
+.diagram svg .box.hl{stroke:var(--accent);stroke-width:2;fill:color-mix(in oklab,var(--accent) 14%,var(--surface))}
+.diagram svg .box.soft{fill:var(--surface-2)}
+.diagram svg .arrow{stroke:currentColor;stroke-width:1.3;fill:none}
+.diagram svg .dash{stroke:var(--muted);stroke-dasharray:5 4;fill:none}
+.diagram svg .op{fill:var(--surface);stroke:currentColor;stroke-width:1.2}
+.calc{font-size:.92rem}
+.calc .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.calc .row:last-child{border-bottom:0}
+.calc .row .r{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.calc .row.sum .r{color:var(--accent);font-weight:600}
+.calc .note{color:var(--muted);font-size:.84rem;margin-top:8px}
+.table-wrap{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.transcript{margin-top:22px;background:var(--surface);border-left:3px solid var(--line);padding:14px 16px;border-radius:0}
+.transcript .label{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;gap:10px;align-items:center}
+.transcript p{font-size:1.02rem;line-height:1.72;max-width:72ch}
+.cue{border-radius:0;padding:1px 0;transition:background .2s}
+.cue.active{background:color-mix(in oklab,var(--accent) 22%,transparent)}
+.cue.done{color:var(--muted)}
+.step.current .transcript{border-left-color:var(--accent)}
+
+/* reference sections */
+.ref{padding-block:34px;border-top:1px solid var(--line)}
+.ref h2{margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:0;background:var(--surface);padding:12px 14px;min-width:0}
+.card .n{font-weight:600}
+.card .r{font-family:var(--mono);font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-top:2px}
+.card .a{font-size:.88rem;color:var(--muted);margin-top:4px}
+.card .t{font-size:.88rem;margin-top:6px}
+.orgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px}
+.orgs .card p{font-size:.92rem;margin-top:6px;max-width:60ch}
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.tl li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.tl .w{font-family:var(--mono);font-size:.85rem;color:var(--accent);font-weight:500}
+.pubs{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pubs li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.pubs .tag{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.pubs .ti{font-weight:600}
+.pubs .au{font-size:.88rem;color:var(--muted)}
+.pubs .ve{font-size:.88rem}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px 24px}
+.gloss div{padding:8px 0;border-bottom:1px dashed var(--line)}
+.gloss dt{font-weight:600;font-family:var(--display)}
+.gloss dd{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+.srcs{columns:2;column-gap:28px;font-size:.92rem}
+.srcs li{break-inside:avoid;margin-bottom:6px}
+.abstract{max-width:76ch;font-size:.95rem;color:var(--muted);margin-top:10px}
+
+/* player */
+.player{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:10px clamp(16px,3vw,32px) calc(10px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px 16px;align-items:center}
+.player .ctl{display:flex;gap:6px}
+.player .ctl .btn{width:40px;height:38px;justify-content:center;padding:0;font-size:1.05rem}
+.player .now{min-width:0}
+.player .now .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.95rem}
+.player .bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.player input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.player .opts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem}
+.player .opts label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.player select{border:1px solid var(--line);border-radius:0;background:var(--surface);padding:4px 6px}
+.player .note{grid-column:1 / -1;font-size:.8rem;color:var(--muted)}
+#stepsBtn{display:none}
+
+dialog{border:1px solid var(--line);border-radius:0;background:var(--surface);color:var(--fg);padding:14px;max-width:min(96vw,1100px)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+#lightbox img{max-width:100%;max-height:78vh;display:block;margin-inline:auto}
+#lightbox .cap{margin-top:10px;font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between;gap:12px;align-items:center}
+#stepsDialog{width:min(96vw,520px)}
+
+@media (max-width: 980px){
+  .shell{grid-template-columns:1fr;gap:0}
+  .rail{display:none}
+  #stepsBtn{display:inline-flex}
+  .step-body{grid-template-columns:1fr}
+  .player{grid-template-columns:auto minmax(0,1fr)}
+  .player .opts{grid-column:1 / -1}
+  .srcs{columns:1}
+}
+@media (max-width: 700px){
+  .pipeline figure, .fig.diagram{overflow-x:auto}
+  .pipeline svg{min-width:680px}
+  .fig.diagram svg{min-width:560px}
+}
+@media (max-width: 520px){
+  .tl li{grid-template-columns:1fr;gap:2px}
+  .player .ctl .btn{width:36px;height:36px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{scroll-behavior:auto!important;transition:none!important}
+}
+</style>
+<!-- body -->
+<header class="masthead">
+  <div class="wrap">
+    <div class="top">
+      <div class="eyebrow" id="eyebrow"><a href="index.html" style="color:inherit;text-decoration:none">← The story in 10 scenes</a> · Narrated walkthrough · INSA Rennes / IETR · industrial PhD</div>
+      <h1 id="title"></h1>
+      <p class="byline" id="byline"></p>
+      <p class="lede" id="lede"></p>
+      <div class="actions">
+        <button class="btn primary" id="playAll">▶ Play the whole story <span class="mono" id="totalTime"></span></button>
+        <div class="seg" role="group" aria-label="Reading level">
+          <button id="modeGuided" aria-pressed="true">Guided</button>
+          <button id="modeExpert" aria-pressed="false">Expert</button>
+        </div>
+        <label class="btn" for="jump">Jump to <select id="jump" aria-label="Jump to a step"></select></label>
+      </div>
+    </div>
+    <div class="pipeline">
+      <div class="eyebrow">Where the thesis sits in the codec</div>
+      <figure class="diagram" style="margin:0">
+        <svg viewBox="0 0 850 345" role="img" aria-label="The hybrid video coding loop; the transform, inverse transform and ALF blocks designed in the thesis are highlighted.">
+          <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+          <text x="20" y="24" class="small">ENCODER</text>
+          <rect class="box soft" x="20" y="40" width="100" height="50" rx="4"/><text x="70" y="69" text-anchor="middle">Input video</text>
+          <line class="arrow" x1="120" y1="65" x2="159" y2="65" marker-end="url(#ah1)"/>
+          <circle class="op" cx="175" cy="65" r="14"/><text x="175" y="70" text-anchor="middle" font-size="16">−</text>
+          <line class="arrow" x1="189" y1="65" x2="213" y2="65" marker-end="url(#ah1)"/><text x="200" y="32" text-anchor="middle" class="small">residual</text>
+          <rect class="box hl" x="215" y="40" width="190" height="50" rx="4"/><text x="310" y="60" text-anchor="middle" font-weight="600">Transform</text><text x="310" y="78" text-anchor="middle" class="small">MTS · LFNST</text>
+          <line class="arrow" x1="405" y1="65" x2="438" y2="65" marker-end="url(#ah1)"/><text x="422" y="32" text-anchor="middle" class="small">coefficients</text>
+          <rect class="box" x="440" y="40" width="120" height="50" rx="4"/><text x="500" y="69" text-anchor="middle">Quantisation</text>
+          <line class="arrow" x1="560" y1="65" x2="593" y2="65" marker-end="url(#ah1)"/><text x="577" y="32" text-anchor="middle" class="small">levels</text>
+          <rect class="box" x="595" y="40" width="130" height="50" rx="4"/><text x="660" y="69" text-anchor="middle">Entropy coding</text>
+          <line class="arrow" x1="725" y1="65" x2="758" y2="65" marker-end="url(#ah1)"/><text x="766" y="69" class="small">bitstream</text>
+          <rect class="dash" x="205" y="135" width="535" height="200" rx="6"/>
+          <text x="215" y="328" class="small">DECODER LOOP · the same blocks, bit-exact, form the decoder chip</text>
+          <line class="arrow" x1="500" y1="90" x2="500" y2="148" marker-end="url(#ah1)"/>
+          <rect class="box" x="440" y="150" width="120" height="50" rx="4"/><text x="500" y="171" text-anchor="middle">Inverse</text><text x="500" y="188" text-anchor="middle">quantisation</text>
+          <line class="arrow" x1="440" y1="175" x2="407" y2="175" marker-end="url(#ah1)"/>
+          <rect class="box hl" x="215" y="150" width="190" height="50" rx="4"/><text x="310" y="170" text-anchor="middle" font-weight="600">Inverse transform</text><text x="310" y="188" text-anchor="middle" class="small">iMTS · iLFNST</text>
+          <line class="arrow" x1="215" y1="175" x2="191" y2="175" marker-end="url(#ah1)"/>
+          <circle class="op" cx="175" cy="175" r="14"/><text x="175" y="180" text-anchor="middle" font-size="16">+</text>
+          <polyline class="arrow" points="175,189 175,285 213,285" marker-end="url(#ah1)"/><text x="183" y="240" class="small">reconstruction</text>
+          <rect class="box" x="215" y="260" width="190" height="50" rx="4"/><text x="310" y="279" text-anchor="middle" font-weight="600">In-loop filters</text><text x="276" y="297" text-anchor="middle" class="small">DBF · SAO ·</text>
+          <rect class="box hl" x="318" y="285" width="38" height="17" rx="3"/><text x="337" y="297" text-anchor="middle" font-size="11" font-weight="600">ALF</text>
+          <line class="arrow" x1="405" y1="285" x2="438" y2="285" marker-end="url(#ah1)"/>
+          <rect class="box" x="440" y="260" width="120" height="50" rx="4"/><text x="500" y="281" text-anchor="middle">Reference</text><text x="500" y="298" text-anchor="middle">pictures</text>
+          <line class="arrow" x1="560" y1="285" x2="593" y2="285" marker-end="url(#ah1)"/>
+          <rect class="box" x="595" y="260" width="130" height="50" rx="4"/><text x="660" y="281" text-anchor="middle">Prediction</text><text x="660" y="298" text-anchor="middle" class="small">intra · inter (motion)</text>
+          <polyline class="arrow" points="725,285 748,285 748,120 175,120 175,81" marker-end="url(#ah1)"/>
+          <line class="arrow" x1="175" y1="120" x2="175" y2="159" marker-end="url(#ah1)"/>
+          <text x="300" y="113" text-anchor="middle" class="small">prediction signal</text>
+          <text x="640" y="113" text-anchor="middle" class="small">subtracted at the encoder, added back in the loop</text>
+        </svg>
+      </figure>
+    </div>
+    <div class="facts" id="facts"></div>
+  </div>
+</header>
+
+<div class="wrap shell">
+  <nav class="rail" id="rail" aria-label="Steps"></nav>
+  <main class="stage">
+    <section class="intro">
+      <h2>How to use this page</h2>
+      <p style="margin-top:8px">Twenty-one steps walk from the question the thesis asked to the silicon it produced. Each step has the key points, the thesis figures, an expert note with the exact numbers, and a narrated transcript. Press play on any step, or play the whole story and let it scroll with the voice.</p>
+      <div class="how">
+        <div>Guided mode keeps the expert notes folded; Expert mode opens them all.</div>
+        <div>Keyboard: space plays or pauses, ← and → change step. Click any figure to enlarge it.</div>
+        <div>New to CPUs, GPUs, FPGAs and ASICs? Read the companion page <a href="platforms.html">The Silicon Ladder</a> first: the four platforms level by level, with a quiz. For the short version of the thesis, see <a href="index.html">the story in 10 scenes</a>.</div>
+      </div>
+    </section>
+    <div id="steps"></div>
+    <section class="ref" id="record">
+      <h2>People and record</h2>
+      <div class="cards" id="people"></div>
+      <div id="jurySec"><h3 style="margin-top:22px">Jury, 31 May 2022</h3>
+      <div class="cards" id="jury" style="margin-top:10px"></div></div>
+      <h3 style="margin-top:22px">Three organisations</h3>
+      <div class="orgs" id="orgs"></div>
+      <h3 style="margin-top:22px">Abstract</h3>
+      <p class="abstract" id="abstract"></p>
+    </section>
+    <section class="ref" id="timeline"><h2>Timeline</h2><ol class="tl" id="tl"></ol></section>
+    <section class="ref" id="publications"><h2>Publications</h2><ol class="pubs" id="pubs"></ol></section>
+    <section class="ref" id="glossary"><h2>Glossary</h2><dl class="gloss" id="gloss"></dl></section>
+    <section class="ref" id="sources"><h2>Sources</h2><ul class="srcs" id="srcs"></ul><p class="sources" style="margin-top:14px">Figures are reproduced from the thesis manuscript (open access on HAL). Numbers in the expert notes cite the thesis table or section they come from.</p></section>
+  </main>
+</div>
+
+<div class="player" id="player" aria-label="Narration player">
+  <div class="ctl">
+    <button class="btn" id="prev" title="Previous step (←)" aria-label="Previous step">⏮</button>
+    <button class="btn primary" id="toggle" title="Play / pause (space)" aria-label="Play">▶</button>
+    <button class="btn" id="next" title="Next step (→)" aria-label="Next step">⏭</button>
+  </div>
+  <div class="now">
+    <div class="t" id="nowTitle">Choose a step, or play the whole story</div>
+    <div class="bar"><span id="tCur">0:00</span><input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek"><span id="tDur">0:00</span></div>
+  </div>
+  <div class="opts">
+    <label><input type="checkbox" id="autoplay" checked> Auto-advance</label>
+    <label><input type="checkbox" id="follow" checked> Follow</label>
+    <label>Speed <select id="speed"><option value="0.9">0.9×</option><option value="1" selected>1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option></select></label>
+    <button class="btn small" id="stepsBtn">Steps</button>
+  </div>
+  <div class="note" id="playerNote" hidden></div>
+</div>
+<audio id="audio" preload="none"></audio>
+
+<dialog id="lightbox"><img id="lbImg" alt=""><div class="cap"><span id="lbCap"></span><button class="btn small" id="lbClose">Close</button></div></dialog>
+<dialog id="stepsDialog"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Steps</b><button class="btn small" id="sdClose">Close</button></div><div id="stepsList"></div></dialog>
+
+<script id="data" type="application/json">__DATA_JSON__</script>
+<script>
+(function(){
+  const DATA = JSON.parse(document.getElementById('data').textContent);
+  const steps = DATA.steps, parts = DATA.parts, charts = DATA.charts || {}, phd = DATA.phd;
+  const byId = {}; steps.forEach(s => byId[s.id] = s);
+  const partById = {}; parts.forEach(p => partById[p.id] = p);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmtTime = s => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0'); };
+  const fmtNum = v => Number(v).toLocaleString('en-US', {maximumFractionDigits: 2});
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const store = { get(){ try { return JSON.parse(localStorage.getItem('vvc-silicon') || '{}'); } catch(e){ return {}; } },
+                  set(o){ try { localStorage.setItem('vvc-silicon', JSON.stringify(o)); } catch(e){} } };
+  let state = store.get(); state.done = state.done || {};
+
+  /* ---------- masthead ---------- */
+  document.getElementById('title').textContent = phd.title;
+  const dir = phd.people.filter(p => /director/i.test(p.role)).map(p => p.name).join(' & ');
+  const sup = phd.people.filter(p => /supervisor/i.test(p.role) && !/acknowledged/i.test(p.role)).map(p => p.name + (p.org ? ' (' + p.org + ')' : '')).join(', ');
+  document.getElementById('byline').innerHTML = '<b>' + esc(phd.author.name) + '</b> · ' + esc(phd.record.institution.split(' — ')[0]) + ' · defended ' + esc(new Date(phd.record.defense_date + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'})) + ' · directed by ' + esc(dir) + ' · supervised by ' + esc(sup);
+  document.getElementById('lede').textContent = 'How three of the new VVC / H.266 coding tools, the MTS and LFNST transforms and the Adaptive Loop Filter, were turned into area-, memory- and power-efficient hardware blocks for a real-time 4K ASIC encoder and decoder.';
+  if (DATA.total_audio) document.getElementById('totalTime').textContent = '≈ ' + Math.round(DATA.total_audio / 60) + ' min';
+  document.getElementById('facts').innerHTML = [
+    ['Target silicon', 'ASIC, 28 nm', 'TSMC process, synthesised at 450 MHz'],
+    ['Decoder cores', '4K60 each', 'two cores for 4K120; 4 samples/cycle transform'],
+    ['Encoder cores', '1080p60 each', 'four cores; 9,000 cycles per 64×64 CTU'],
+    ['Tools designed', 'MTS · LFNST · ALF', 'decoder and encoder sides'],
+    ['Firsts', '3', 'HW LFNST, complete HW ALF, HW ALF encoder'],
+    ['Papers', '4', 'ICASSP 2020 · TCE 2021 · TCE 2022 · PCS 2022']
+  ].map(f => '<div class="fact"><div class="k">' + esc(f[0]) + '</div><div class="v">' + esc(f[1]) + '</div><div class="s">' + esc(f[2]) + '</div></div>').join('');
+
+  /* ---------- inline diagrams and calc cards ---------- */
+  const SVGS = {
+    org: '<svg viewBox="0 0 760 380" role="img" aria-label="Flow between the standard, the lab, the industrial partner and the thesis: tool definitions come from JVET, method and evaluation from IETR, constraints and the product from the partner; the thesis delivers the transform and ALF blocks to the partner\'s VVC ASIC.">'
+      + '<defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>'
+      + '<rect class="box" x="205" y="16" width="350" height="52" rx="5"/><text x="380" y="38" text-anchor="middle" font-weight="600">JVET · VVC / H.266 standard</text><text x="380" y="56" text-anchor="middle" class="small">+ VTM reference software (the exact integer arithmetic)</text>'
+      + '<line class="arrow" x1="380" y1="68" x2="380" y2="138" marker-end="url(#ah2)"/><text x="390" y="108" class="small">tool definitions, bit-exact reference</text>'
+      + '<rect class="box soft" x="16" y="140" width="210" height="108" rx="5"/><text x="121" y="162" text-anchor="middle" font-weight="600">IETR / INSA Rennes</text><text x="121" y="179" text-anchor="middle" class="small">VAADER team</text><text x="121" y="201" text-anchor="middle" class="small">method · CTC evaluation · papers</text><text x="121" y="217" text-anchor="middle" class="small">Hamidouche · Ménard · Déforges</text><text x="121" y="236" text-anchor="middle" class="small">(OpenVVC, HEVC/VVC standardisation)</text>'
+      + '<line class="arrow" x1="226" y1="194" x2="253" y2="194" marker-end="url(#ah2)"/>'
+      + '<rect class="box soft" x="534" y="140" width="210" height="108" rx="5"/><text x="639" y="162" text-anchor="middle" font-weight="600">Industrial partner</text><text x="639" y="179" text-anchor="middle" class="small">codec team · hardware encoders and decoders</text><text x="639" y="201" text-anchor="middle" class="small">constraints: 450 MHz · 28 nm · cycle budgets</text><text x="639" y="217" text-anchor="middle" class="small">industrial supervisor and integration</text><text x="639" y="236" text-anchor="middle" class="small">(a real product to ship into)</text>'
+      + '<line class="arrow" x1="534" y1="194" x2="507" y2="194" marker-end="url(#ah2)"/>'
+      + '<rect class="box hl" x="255" y="140" width="250" height="108" rx="5"/><text x="380" y="164" text-anchor="middle" font-weight="600">The thesis (2019–2022)</text><text x="380" y="186" text-anchor="middle" class="small">architecture → VHDL → bit-exact verification</text><text x="380" y="203" text-anchor="middle" class="small">→ synthesis (area, memory, power)</text><text x="380" y="226" text-anchor="middle" class="small">MTS · LFNST · ALF, decoder and encoder</text>'
+      + '<line class="arrow" x1="380" y1="248" x2="380" y2="308" marker-end="url(#ah2)"/><text x="390" y="283" class="small">transform and ALF blocks, integrated</text>'
+      + '<rect class="box" x="205" y="310" width="350" height="52" rx="5"/><text x="380" y="332" text-anchor="middle" font-weight="600">The partner\'s VVC ASIC: real-time encoder + decoder</text><text x="380" y="350" text-anchor="middle" class="small">multi-standard: AVC · HEVC · VVC</text>'
+      + '</svg>'
+  };
+  const CALCS = {
+    budget: '<div class="calc">'
+      + '<div class="row"><span>4K per decoder core: 3840 × 2160 luma samples × 60 fps</span><span class="r">497.7 M samples/s</span></div>'
+      + '<div class="row"><span>+ chroma in 4:2:0 (×1.5)</span><span class="r">746.5 M samples/s</span></div>'
+      + '<div class="row sum"><span>÷ 450 MHz clock → average load</span><span class="r">1.66 samples / cycle</span></div>'
+      + '<div class="row"><span>Modules are sized for the worst case (small blocks, no zeroing): 1-D transform</span><span class="r">4 samples / cycle</span></div>'
+      + '<div class="row"><span>Folded 2-D transform (same core used twice)</span><span class="r">2 samples / cycle</span></div>'
+      + '<div class="row"><span>ALF (4:2:2, per CTU of any size)</span><span class="r">2 pixels / cycle</span></div>'
+      + '<div class="row"><span>Cycle budget per transform block at 4K60, 4:2:0, 450 MHz: 64×64 · 32×32 · 16×16 · 8×8 · 4×4</span><span class="r">1,238 · 310 · 78 · 20 · 5</span></div>'
+      + '<div class="row"><span>Encoder core, 1080p60: 510 CTUs of 64×64 per frame × 60 fps × 9,000 cycles</span><span class="r">≈ 275 M of 450 M cycles/s</span></div>'
+      + '<div class="note">The first three rows and the last one are derived here from the thesis targets; the budgets per block are the thesis’s own (Tables 5.1, 6.1, 9.1). The gap between the average load and the worst case is why a fixed-latency, worst-case design is the honest one.</div>'
+      + '</div>'
+  };
+
+  function barChart(c){
+    if (!c) return '';
+    const max = Math.max.apply(null, c.rows.map(r => r.value));
+    const W = 640, left = 8, right = 96, labelH = 18, barH = 14, rowH = 48, top = 6;
+    const H = top + c.rows.length * rowH + 4;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(c.title) + '" class="barchart">';
+    c.rows.forEach((r, i) => {
+      const y = top + i * rowH, w = Math.max(6, (W - left - right) * r.value / max), by = y + labelH + 4;
+      s += '<text x="' + left + '" y="' + (y + 13) + '" class="lbl">' + esc(r.label) + '</text>';
+      s += '<path class="bar' + (r.emph ? ' emph' : '') + '" d="M' + left + ',' + by + ' h' + (w - 4) + ' a4,4 0 0 1 4,4 v' + (barH - 8) + ' a4,4 0 0 1 -4,4 h-' + (w - 4) + ' z"><title>' + esc(r.label) + ': ' + fmtNum(r.value) + ' ' + esc(c.unit || '') + '</title></path>';
+      s += '<text x="' + (left + w + 8) + '" y="' + (by + barH - 3) + '" class="val">' + fmtNum(r.value) + '</text>';
+    });
+    s += '<line class="axis" x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (H - 4) + '"/></svg>';
+    return '<div class="chart-title">' + esc(c.title) + (c.unit ? ' <span class="mono" style="color:var(--muted);font-weight:400">(' + esc(c.unit) + ')</span>' : '') + '</div>' + s + (c.note ? '<div class="chart-note">' + esc(c.note) + '</div>' : '');
+  }
+  function figureHTML(f){
+    const cap = '<figcaption>' + esc(f.caption) + (f.source ? '<span class="src">' + esc(f.source) + '</span>' : '') + '</figcaption>';
+    if (f.file) return '<figure class="fig"><a class="zoom" href="assets/figures/' + esc(f.file) + '" data-caption="' + esc(f.caption) + '"><img src="assets/figures/' + esc(f.file) + '" alt="' + esc(f.caption) + '" loading="lazy"></a>' + cap + '</figure>';
+    if (f.chart) return '<figure class="fig chart">' + barChart(charts[f.chart]) + cap + '</figure>';
+    if (f.svg) return '<figure class="fig diagram">' + (SVGS[f.svg] || '') + cap + '</figure>';
+    if (f.calc) return '<figure class="fig">' + (CALCS[f.calc] || '') + cap + '</figure>';
+    return '';
+  }
+  function sentences(text){
+    const out = []; const re = /[^.!?]+[.!?]+(?:["')\]]+)?(?:\s+|$)|[^.!?]+$/g; let m;
+    while ((m = re.exec(text)) !== null) { if (m[0].trim()) out.push({text: m[0].trim(), index: m.index}); }
+    return out;
+  }
+  function transcriptHTML(s){
+    const cues = (s.audio && s.audio.cues && s.audio.cues.length) ? s.audio.cues.map(c => c.text) : sentences(s.narration).map(x => x.text);
+    return '<div class="transcript" id="tr-' + s.id + '"><div class="label"><span>Narration</span>' + (s.audio ? '<span>' + fmtTime(s.audio.duration) + '</span>' : '<span>browser voice</span>') + '</div><p>' + cues.map((t, i) => '<span class="cue" data-i="' + i + '">' + esc(t) + '</span>').join(' ') + '</p></div>';
+  }
+  function tableHTML(t){
+    const numCols = new Set([2,3,4,5,6]);
+    return '<div class="table-wrap"><table><thead><tr>' + t.columns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>'
+      + t.rows.map(r => '<tr>' + r.map((c, i) => '<td' + (numCols.has(i) ? ' class="num"' : '') + '>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  }
+
+  /* ---------- steps ---------- */
+  const stepsEl = document.getElementById('steps');
+  stepsEl.innerHTML = steps.map((s, i) => {
+    const p = partById[s.part] || {};
+    return '<section class="step" id="step-' + s.id + '" data-id="' + s.id + '">'
+      + '<header class="step-head"><div class="step-meta"><span class="part-tag ' + esc(s.part) + '">Part ' + esc(s.part) + ' · ' + esc(p.title) + '</span><span>Step ' + (i + 1) + ' of ' + steps.length + '</span></div>'
+      + '<h2>' + esc(s.title) + '</h2><p class="kicker">' + esc(s.kicker || '') + '</p>'
+      + '<div class="step-actions"><button class="btn small play-btn" data-id="' + s.id + '">▶ Listen' + (s.audio ? ' · ' + fmtTime(s.audio.duration) : '') + '</button></div></header>'
+      + '<div class="step-body"><div class="step-main"><ul class="points">' + (s.points || []).map(x => '<li>' + x + '</li>').join('') + '</ul>'
+      + (s.expert ? '<details class="expert"><summary>Expert note</summary>' + s.expert + '</details>' : '')
+      + (s.sources && s.sources.length ? '<p class="sources"><b>Sources:</b> ' + s.sources.map(esc).join(' · ') + '</p>' : '')
+      + '</div>' + ((s.figures && s.figures.length) ? '<div class="step-figs">' + s.figures.map(figureHTML).join('') + '</div>' : '') + '</div>'
+      + (s.table ? tableHTML(s.table) : '')
+      + transcriptHTML(s)
+      + '</section>';
+  }).join('');
+
+  /* ---------- rail, jump list, steps dialog ---------- */
+  function railHTML(){
+    return parts.map(p => '<div class="rail-part"><div class="rail-part-title">Part ' + esc(p.id) + ' · ' + esc(p.title) + '</div><ol class="rail-steps">'
+      + steps.filter(s => s.part === p.id).map(s => '<li><a href="#step-' + s.id + '" class="rail-link' + (state.done[s.id] ? ' done' : '') + '" data-id="' + s.id + '"><span class="rail-num">' + (state.done[s.id] ? '✓' : Number(s.id)) + '</span><span class="rail-title">' + esc(s.title) + '</span><span class="rail-dur">' + (s.audio ? fmtTime(s.audio.duration) : '') + '</span></a></li>').join('')
+      + '</ol></div>').join('');
+  }
+  const rail = document.getElementById('rail'); rail.innerHTML = railHTML();
+  const stepsList = document.getElementById('stepsList'); stepsList.innerHTML = railHTML();
+  document.getElementById('jump').innerHTML = '<option value="">step…</option>' + steps.map(s => '<option value="' + s.id + '">' + Number(s.id) + '. ' + esc(s.title) + '</option>').join('');
+
+  /* ---------- reference sections ---------- */
+  document.getElementById('people').innerHTML = phd.people.map(p => '<div class="card"><div class="n">' + esc(p.name) + '</div><div class="r">' + esc(p.role) + '</div><div class="a">' + esc(p.affiliation) + '</div>' + (p.note ? '<div class="t">' + esc(p.note) + '</div>' : '') + '</div>').join('');
+  document.getElementById('jury').innerHTML = phd.jury.map(p => '<div class="card"><div class="n">' + esc(p.name) + '</div><div class="r">' + esc(p.role) + '</div><div class="a">' + esc(p.affiliation) + '</div></div>').join('');
+  const o = phd.organisations;
+  document.getElementById('orgs').innerHTML = [[o.company.name, o.company], ['INSA Rennes and IETR', o.university], [o.now.name, o.now]].map(x => '<div class="card"><div class="n">' + esc(x[0]) + '</div><p>' + esc(x[1].summary) + '</p>' + (x[1].why_it_matters ? '<p>' + esc(x[1].why_it_matters) + '</p>' : '') + (x[1].lab ? '<p>' + esc(x[1].lab) + '</p>' : '') + (x[1].url ? '<p><a href="' + esc(x[1].url) + '" target="_blank" rel="noopener">' + esc(x[1].url.replace(/^https?:\/\//, '')) + '</a></p>' : '') + '</div>').join('');
+  if (!phd.jury.length) document.getElementById('jurySec').hidden = true;
+  document.getElementById('abstract').textContent = phd.abstract;
+  document.getElementById('tl').innerHTML = phd.timeline.map(t => '<li><span class="w">' + esc(t.when) + '</span><span>' + esc(t.what) + '</span></li>').join('');
+  document.getElementById('pubs').innerHTML = phd.publications.map(p => '<li><span class="tag">' + esc(p.tag === 'after' ? p.year : p.tag + ' · ' + p.year) + '</span><div><div class="ti">' + esc(p.title) + '</div><div class="au">' + esc(p.authors) + '</div><div class="ve">' + esc(p.venue) + (p.doi ? ' · <a href="https://doi.org/' + esc(p.doi) + '" target="_blank" rel="noopener">doi:' + esc(p.doi) + '</a>' : '') + (p.open ? ' · <a href="' + esc(p.open) + '" target="_blank" rel="noopener">open access</a>' : '') + ' · <span class="mono" style="color:var(--muted)">' + esc(p.part) + '</span></div></div></li>').join('');
+  document.getElementById('gloss').innerHTML = DATA.glossary.map(g => '<div><dt>' + esc(g.term) + '</dt><dd>' + esc(g.def) + '</dd></div>').join('');
+  document.getElementById('srcs').innerHTML = phd.sources.map(s => '<li><a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.label) + '</a></li>').join('');
+
+  /* ---------- reading level ---------- */
+  function setMode(expert){
+    document.body.classList.toggle('mode-expert', expert);
+    document.querySelectorAll('details.expert').forEach(d => d.open = expert);
+    document.getElementById('modeGuided').setAttribute('aria-pressed', String(!expert));
+    document.getElementById('modeExpert').setAttribute('aria-pressed', String(expert));
+    state.mode = expert ? 'expert' : 'guided'; store.set(state);
+  }
+  document.getElementById('modeGuided').addEventListener('click', () => setMode(false));
+  document.getElementById('modeExpert').addEventListener('click', () => setMode(true));
+  setMode(state.mode === 'expert');
+
+  /* ---------- player ---------- */
+  const audio = document.getElementById('audio');
+  const toggleBtn = document.getElementById('toggle'), nowTitle = document.getElementById('nowTitle');
+  const seek = document.getElementById('seek'), tCur = document.getElementById('tCur'), tDur = document.getElementById('tDur');
+  const autoplayBox = document.getElementById('autoplay'), followBox = document.getElementById('follow'), speedSel = document.getElementById('speed');
+  const note = document.getElementById('playerNote');
+  let cur = null, playing = false, usingTTS = false, utter = null, seeking = false, ttsStart = 0, ttsTimer = null;
+  const synth = window.speechSynthesis;
+
+  function showNote(msg){ note.textContent = msg; note.hidden = !msg; }
+  function setCurrent(id, scroll){
+    cur = id; const s = byId[id];
+    document.querySelectorAll('.step.current').forEach(e => e.classList.remove('current'));
+    const sec = document.getElementById('step-' + id); if (sec) sec.classList.add('current');
+    document.querySelectorAll('.rail-link').forEach(a => a.classList.toggle('active', a.dataset.id === id));
+    nowTitle.textContent = 'Step ' + Number(id) + ' · ' + s.title;
+    state.last = id; store.set(state);
+    if (scroll && sec) sec.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    const ra = rail.querySelector('.rail-link.active'); if (ra && ra.scrollIntoView) ra.scrollIntoView({block: 'nearest'});
+  }
+  function clearCues(id){ const tr = document.getElementById('tr-' + id); if (tr) tr.querySelectorAll('.cue').forEach(c => c.classList.remove('active', 'done')); }
+  function highlight(id, idx){
+    const tr = document.getElementById('tr-' + id); if (!tr) return;
+    tr.querySelectorAll('.cue').forEach((c, i) => { c.classList.toggle('active', i === idx); c.classList.toggle('done', i < idx); });
+    if (followBox.checked && idx >= 0) { const el = tr.querySelector('.cue[data-i="' + idx + '"]'); if (el) el.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest'}); }
+  }
+  function setPlayingUI(on){ playing = on; toggleBtn.textContent = on ? '⏸' : '▶'; toggleBtn.setAttribute('aria-label', on ? 'Pause' : 'Play'); }
+  function markDone(id){ state.done[id] = true; store.set(state); document.querySelectorAll('.rail-link[data-id="' + id + '"]').forEach(a => { a.classList.add('done'); a.querySelector('.rail-num').textContent = '✓'; }); }
+
+  function stopAll(){
+    audio.pause();
+    if (synth) { try { synth.cancel(); } catch(e){} }
+    if (ttsTimer) { clearInterval(ttsTimer); ttsTimer = null; }
+    setPlayingUI(false);
+  }
+  function play(id, scroll){
+    stopAll(); setCurrent(id, scroll !== false); clearCues(id);
+    const s = byId[id]; showNote('');
+    if (s.audio && !usingTTS) {
+      audio.src = s.audio.src; audio.playbackRate = parseFloat(speedSel.value) || 1;
+      const p = audio.play(); if (p && p.catch) p.catch(() => {});
+      setPlayingUI(true);
+    } else speak(s);
+  }
+  function speak(s){
+    if (!synth || !('SpeechSynthesisUtterance' in window)) { showNote('Narration audio is not available here; read the transcript below each step.'); setPlayingUI(false); return; }
+    const sents = sentences(s.narration);
+    utter = new SpeechSynthesisUtterance(s.narration); utter.rate = parseFloat(speedSel.value) || 1; utter.lang = 'en-US';
+    const voices = synth.getVoices ? synth.getVoices() : []; const v = voices.find(x => /en[-_]US/i.test(x.lang) && /natural|neural|online/i.test(x.name)) || voices.find(x => /en[-_]US/i.test(x.lang)); if (v) utter.voice = v;
+    utter.onboundary = e => { let idx = -1; for (let i = 0; i < sents.length; i++) if (sents[i].index <= e.charIndex) idx = i; highlight(s.id, idx); };
+    utter.onend = () => { setPlayingUI(false); markDone(s.id); highlight(s.id, sents.length); if (autoplayBox.checked) next(true); };
+    utter.onerror = () => { setPlayingUI(false); showNote('The browser voice stopped; press play to retry.'); };
+    tDur.textContent = '–:––'; tCur.textContent = '0:00'; seek.value = 0;
+    showNote('Using the browser’s voice for this step.');
+    synth.cancel(); synth.speak(utter); setPlayingUI(true);
+  }
+  function next(auto){ const i = steps.findIndex(s => s.id === cur); if (i < 0) return play(steps[0].id); if (i + 1 < steps.length) play(steps[i + 1].id); else { stopAll(); showNote('End of the story. The reference sections follow below.'); } }
+  function prev(){ const i = steps.findIndex(s => s.id === cur); if (i > 0) play(steps[i - 1].id); else if (i === 0) play(steps[0].id); }
+
+  audio.addEventListener('timeupdate', () => {
+    if (!cur || seeking) return; const s = byId[cur]; const t = audio.currentTime;
+    if (audio.duration) { seek.value = Math.round(1000 * t / audio.duration); tCur.textContent = fmtTime(t); tDur.textContent = fmtTime(audio.duration); }
+    if (s.audio && s.audio.cues.length) { let idx = -1; for (let i = 0; i < s.audio.cues.length; i++) if (s.audio.cues[i].start <= t + 0.05) idx = i; highlight(cur, idx); }
+  });
+  audio.addEventListener('ended', () => { setPlayingUI(false); if (cur) { markDone(cur); const s = byId[cur]; if (s.audio) highlight(cur, s.audio.cues.length); } if (autoplayBox.checked) next(true); });
+  audio.addEventListener('play', () => setPlayingUI(true));
+  audio.addEventListener('pause', () => { if (!audio.ended) setPlayingUI(false); });
+  audio.addEventListener('error', () => { if (!cur) return; usingTTS = true; showNote('The narration file could not be loaded; switching to the browser voice.'); speak(byId[cur]); });
+  seek.addEventListener('input', () => { seeking = true; if (audio.duration) tCur.textContent = fmtTime(seek.value / 1000 * audio.duration); });
+  seek.addEventListener('change', () => { seeking = false; if (audio.duration) audio.currentTime = seek.value / 1000 * audio.duration; });
+  speedSel.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSel.value) || 1; });
+  toggleBtn.addEventListener('click', () => {
+    if (!cur) return play(state.last && byId[state.last] ? state.last : steps[0].id);
+    if (usingTTS || !byId[cur].audio) { if (playing) { stopAll(); } else play(cur, false); return; }
+    if (playing) audio.pause(); else { if (!audio.src) play(cur, false); else { const p = audio.play(); if (p && p.catch) p.catch(() => {}); } }
+  });
+  document.getElementById('next').addEventListener('click', () => next(false));
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('playAll').addEventListener('click', () => { autoplayBox.checked = true; play(steps[0].id); });
+  document.getElementById('jump').addEventListener('change', e => { if (e.target.value) { setCurrent(e.target.value, true); e.target.value = ''; } });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.play-btn'); if (b) { play(b.dataset.id, false); return; }
+    const z = e.target.closest('a.zoom'); if (z) { e.preventDefault(); const lb = document.getElementById('lightbox'); document.getElementById('lbImg').src = z.getAttribute('href'); document.getElementById('lbImg').alt = z.dataset.caption || ''; document.getElementById('lbCap').textContent = z.dataset.caption || ''; lb.showModal(); return; }
+    const r = e.target.closest('.rail-link'); if (r) { e.preventDefault(); setCurrent(r.dataset.id, true); const d = document.getElementById('stepsDialog'); if (d.open) d.close(); }
+  });
+  document.getElementById('lbClose').addEventListener('click', () => document.getElementById('lightbox').close());
+  document.getElementById('lightbox').addEventListener('click', e => { if (e.target.id === 'lightbox') e.currentTarget.close(); });
+  document.getElementById('stepsBtn').addEventListener('click', () => document.getElementById('stepsDialog').showModal());
+  document.getElementById('sdClose').addEventListener('click', () => document.getElementById('stepsDialog').close());
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'select' || tag === 'textarea' || e.target.isContentEditable) return;
+    if (e.code === 'Space') { e.preventDefault(); toggleBtn.click(); }
+    else if (e.key === 'ArrowRight') next(false); else if (e.key === 'ArrowLeft') prev();
+  });
+
+  /* ---------- current step tracking while reading ---------- */
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      if (playing) return;
+      entries.forEach(en => { if (en.isIntersecting && en.intersectionRatio > 0.35) { const id = en.target.dataset.id; if (id !== cur) { cur = id; document.querySelectorAll('.rail-link').forEach(a => a.classList.toggle('active', a.dataset.id === id)); nowTitle.textContent = 'Step ' + Number(id) + ' · ' + byId[id].title; } } });
+    }, {threshold: [0.35]});
+    document.querySelectorAll('.step').forEach(s => io.observe(s));
+  }
+  const h = (location.hash || '').replace('#', '');
+  if (/^step-\d+$/.test(h) && byId[h.slice(5)]) setCurrent(h.slice(5), true);
+  else if (state.last && byId[state.last]) { cur = state.last; nowTitle.textContent = 'Resume step ' + Number(cur) + ' · ' + byId[cur].title; }
+  if (synth && synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => {};
+})();
+</script>
