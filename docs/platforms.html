@@ -164,17 +164,17 @@ td:first-child{font-weight:600;white-space:nowrap}
       <span class="eyebrow" style="margin-left:6px">7 levels · 20-question quiz · about 35 minutes</span>
     </div>
     <figure class="diagram scroll" style="border:0;padding:0;background:transparent">
-      <svg viewBox="0 0 900 230" role="img" aria-label="A scale from general-purpose to application-specific hardware: CPU executes any program; GPU executes one instruction on many data elements; FPGA is a reconfigurable circuit; ASIC is a fixed circuit.">
+      <svg viewBox="0 0 900 240" role="img" aria-label="A scale from general-purpose to application-specific hardware: CPU executes any program; GPU executes one instruction on many data elements; FPGA is a reconfigurable circuit; ASIC is a fixed circuit.">
         <defs><marker id="ah0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
-        <line class="arrow" x1="60" y1="150" x2="860" y2="150" marker-end="url(#ah0)" marker-start="url(#ah0)"/>
-        <text x="60" y="178" class="small">general purpose: the sequence of operations is set by a program</text>
-        <text x="860" y="178" text-anchor="end" class="small">application specific: the sequence of operations is fixed in the circuit</text>
-        <text x="60" y="200" class="small">highest flexibility · highest energy per result</text>
-        <text x="860" y="200" text-anchor="end" class="small">no flexibility · lowest energy per result</text>
-        <circle class="fill-cpu" cx="170" cy="150" r="20"/><text x="170" y="98" text-anchor="middle" class="b">CPU</text><text x="170" y="116" text-anchor="middle" class="small">executes any program</text><text x="170" y="131" text-anchor="middle" class="small">one instruction stream per core</text>
-        <circle class="fill-gpu" cx="390" cy="150" r="20"/><text x="390" y="98" text-anchor="middle" class="b">GPU</text><text x="390" y="116" text-anchor="middle" class="small">one instruction on thousands of data elements</text><text x="390" y="131" text-anchor="middle" class="small">still controlled by a program</text>
-        <circle class="fill-fpga" cx="610" cy="150" r="20"/><text x="610" y="98" text-anchor="middle" class="b">FPGA</text><text x="610" y="116" text-anchor="middle" class="small">a circuit that can be reconfigured</text><text x="610" y="131" text-anchor="middle" class="small">no instructions</text>
-        <circle class="fill-asic" cx="800" cy="150" r="20"/><text x="800" y="98" text-anchor="middle" class="b">ASIC</text><text x="800" y="116" text-anchor="middle" class="small">a circuit fixed at manufacture</text><text x="800" y="131" text-anchor="middle" class="small">lowest energy per result</text>
+        <line class="arrow" x1="60" y1="162" x2="860" y2="162" marker-end="url(#ah0)" marker-start="url(#ah0)"/>
+        <text x="60" y="192" class="small">general purpose: the sequence of operations is set by a program</text>
+        <text x="860" y="192" text-anchor="end" class="small">application specific: the sequence of operations is fixed in the circuit</text>
+        <text x="60" y="214" class="small">highest flexibility · highest energy per result</text>
+        <text x="860" y="214" text-anchor="end" class="small">no flexibility · lowest energy per result</text>
+        <circle class="fill-cpu" cx="170" cy="162" r="17"/><text x="170" y="98" text-anchor="middle" class="b">CPU</text><text x="170" y="116" text-anchor="middle" class="small">executes any program</text><text x="170" y="131" text-anchor="middle" class="small">one instruction stream per core</text>
+        <circle class="fill-gpu" cx="390" cy="162" r="17"/><text x="390" y="98" text-anchor="middle" class="b">GPU</text><text x="390" y="116" text-anchor="middle" class="small">one instruction on thousands of data elements</text><text x="390" y="131" text-anchor="middle" class="small">still controlled by a program</text>
+        <circle class="fill-fpga" cx="610" cy="162" r="17"/><text x="610" y="98" text-anchor="middle" class="b">FPGA</text><text x="610" y="116" text-anchor="middle" class="small">a circuit that can be reconfigured</text><text x="610" y="131" text-anchor="middle" class="small">no instructions</text>
+        <circle class="fill-asic" cx="800" cy="162" r="17"/><text x="800" y="98" text-anchor="middle" class="b">ASIC</text><text x="800" y="116" text-anchor="middle" class="small">a circuit fixed at manufacture</text><text x="800" y="131" text-anchor="middle" class="small">lowest energy per result</text>
         <text x="280" y="40" text-anchor="middle" class="small">decided by the program at run time ──────▶</text>
         <text x="700" y="40" text-anchor="middle" class="small">◀────── fixed in the circuit at design time</text>
       </svg>
@@ -227,7 +227,7 @@ td:first-child{font-weight:600;white-space:nowrap}
       </ol>
     </div>
   </div>
-  <figure class="diagram scroll"><svg viewBox="0 0 760 250" role="img" aria-label="A CPU core: fetch, decode, execute, memory and write-back stages, served by level-1, level-2 and level-3 caches and DRAM.">
+  <figure class="diagram scroll"><svg viewBox="0 0 760 256" role="img" aria-label="A CPU core: fetch, decode, execute, memory and write-back stages, served by level-1, level-2 and level-3 caches and DRAM.">
     <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
     <rect class="box cpu" x="20" y="30" width="720" height="110" rx="6"/><text x="34" y="52" class="small">ONE CORE · one instruction stream · 3–5 GHz · a few instructions per cycle</text>
     <rect class="box soft" x="40" y="70" width="110" height="50" rx="4"/><text x="95" y="99" text-anchor="middle">Fetch</text>
@@ -246,7 +246,7 @@ td:first-child{font-weight:600;white-space:nowrap}
     <rect class="box" x="40" y="170" width="150" height="34" rx="4"/><text x="115" y="192" text-anchor="middle" class="small">DRAM · ~80 ns · 640 pJ</text>
     <line class="arrow" x1="545" y1="120" x2="545" y2="168" marker-end="url(#ah1)" marker-start="url(#ah1)"/>
     <line class="arrow" x1="470" y1="187" x2="452" y2="187" marker-end="url(#ah1)"/><line class="arrow" x1="340" y1="187" x2="322" y2="187" marker-end="url(#ah1)"/><line class="arrow" x1="210" y1="187" x2="192" y2="187" marker-end="url(#ah1)"/>
-    <text x="40" y="232" class="small">Each cache level is larger and slower than the previous one. Without caches the core would wait about 300 cycles for every DRAM access. Most of the die area is cache and control logic, not arithmetic.</text>
+    <text x="40" y="226" class="small">Each cache level is larger and slower than the previous one; without caches the core would wait about 300 cycles for every DRAM access.</text><text x="40" y="242" class="small">Most of the die area is cache and control logic, not arithmetic.</text>
   </svg><figcaption>A CPU core and its memory hierarchy. Latencies are typical values for a desktop processor.</figcaption></figure>
   <div class="grid2">
     <div class="pro"><h3>Strengths</h3><ul class="plain"><li>General computation: operating systems, compilers, databases, protocols, control logic.</li><li>Irregular code in which each step depends on the result of the previous one.</li><li>Low latency for a single task; mature languages, debuggers and libraries.</li><li>The host role: a CPU controls every other platform in a system.</li></ul></div>
@@ -279,12 +279,12 @@ td:first-child{font-weight:600;white-space:nowrap}
   <figure class="diagram scroll"><svg viewBox="0 0 760 290" role="img" aria-label="A GPU streaming multiprocessor: a warp scheduler issues one instruction to 32 lanes in lockstep; a large register file and a small shared memory; many multiprocessors share high-bandwidth memory; the card is connected to the CPU host over PCIe.">
     <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
     <rect class="box gpu" x="20" y="20" width="440" height="220" rx="6"/><text x="34" y="42" class="small">ONE STREAMING MULTIPROCESSOR · 80–130 per die · 1.5–2.5 GHz</text>
-    <rect class="box soft" x="40" y="56" width="400" height="26" rx="3"/><text x="240" y="74" text-anchor="middle" class="small">warp scheduler: each cycle, issues one instruction for a ready group of 32 threads</text>
+    <rect class="box soft" x="40" y="56" width="400" height="26" rx="3"/><text x="240" y="74" text-anchor="middle" class="small">scheduler: each cycle, one instruction to a ready group of 32 threads</text>
     <g id="aluGrid"></g>
     <text x="40" y="178" class="small">32 lanes execute the same instruction on 32 data elements</text>
-    <rect class="box soft" x="40" y="188" width="195" height="26" rx="3"/><text x="137" y="206" text-anchor="middle" class="small">register file: large (thousands of threads)</text>
-    <rect class="box soft" x="245" y="188" width="195" height="26" rx="3"/><text x="342" y="206" text-anchor="middle" class="small">shared memory / L1 cache: small</text>
-    <text x="40" y="232" class="small">latency is hidden by switching between thread groups, not by prediction or large caches</text>
+    <rect class="box soft" x="40" y="188" width="195" height="26" rx="3"/><text x="137" y="206" text-anchor="middle" class="small">register file: large</text>
+    <rect class="box soft" x="245" y="188" width="195" height="26" rx="3"/><text x="342" y="206" text-anchor="middle" class="small">shared memory / L1: small</text>
+    <text x="40" y="232" class="small">latency is hidden by switching thread groups, not by caches</text>
     <rect class="box" x="520" y="60" width="220" height="70" rx="6"/><text x="630" y="86" text-anchor="middle" class="b">GDDR6 / HBM memory</text><text x="630" y="106" text-anchor="middle" class="small">8–80 GB · 0.5–3+ TB/s</text>
     <line class="fat" x1="460" y1="95" x2="518" y2="95"/><line class="arrow" x1="460" y1="95" x2="518" y2="95" marker-end="url(#ah2)" marker-start="url(#ah2)"/>
     <rect class="box cpu" x="520" y="170" width="220" height="70" rx="6"/><text x="630" y="196" text-anchor="middle" class="b">CPU host</text><text x="630" y="216" text-anchor="middle" class="small">launches kernels, copies data</text>
@@ -320,7 +320,7 @@ td:first-child{font-weight:600;white-space:nowrap}
       </ol>
     </div>
   </div>
-  <figure class="diagram scroll"><svg viewBox="0 0 760 320" role="img" aria-label="FPGA fabric: a grid of configurable logic blocks, each a look-up table and a flip-flop, connected by programmable routing, with columns of block RAM and DSP slices and input-output blocks at the edge; configured by a bitstream at power-up.">
+  <figure class="diagram scroll"><svg viewBox="0 0 760 362" role="img" aria-label="FPGA fabric: a grid of configurable logic blocks, each a look-up table and a flip-flop, connected by programmable routing, with columns of block RAM and DSP slices and input-output blocks at the edge; configured by a bitstream at power-up.">
     <g id="fpgaGrid"></g>
   </svg><figcaption>FPGA fabric. The design flow is synthesis, then placement and routing onto this grid, then generation of a bitstream. It takes minutes to hours. The resulting circuit typically runs at 100–500 MHz with cycle-exact timing.</figcaption></figure>
   <div class="grid2">
@@ -365,9 +365,9 @@ td:first-child{font-weight:600;white-space:nowrap}
       <line class="arrow" x1="510" y1="68" x2="528" y2="68" marker-end="url(#ah4)"/>
       <rect class="box" x="530" y="40" width="100" height="56" rx="5"/><text x="580" y="64" text-anchor="middle" class="b">Tape-out</text><text x="580" y="82" text-anchor="middle" class="small">masks made</text>
       <line class="arrow" x1="630" y1="68" x2="648" y2="68" marker-end="url(#ah4)"/>
-      <rect class="box asic" x="650" y="40" width="90" height="56" rx="5"/><text x="695" y="64" text-anchor="middle" class="b">Fab · test</text><text x="695" y="82" text-anchor="middle" class="small">wafers, packaging</text>
+      <rect class="box asic" x="648" y="40" width="104" height="56" rx="5"/><text x="700" y="64" text-anchor="middle" class="b">Fab · test</text><text x="700" y="82" text-anchor="middle" class="small">wafers, packaging</text>
     </g>
-    <path class="dash" d="M695,96 v40 h-625 v-40" marker-end="url(#ah4)"/><text x="380" y="130" text-anchor="middle" class="small">an error found after tape-out requires new masks: months of delay and significant cost</text>
+    <path class="dash" d="M700,96 v40 h-630 v-40" marker-end="url(#ah4)"/><text x="380" y="130" text-anchor="middle" class="small">an error found after tape-out requires new masks: months of delay and significant cost</text>
     <text x="20" y="170" class="small b">Non-recurring engineering, paid once: design, verification, IP, masks. Of the order of $1–5M at 28 nm, far more at 5 nm. 12–24 months.</text>
     <text x="20" y="192" class="small">Per unit: die area × wafer cost ÷ yield. Cents to a few dollars for a codec-sized die, at any volume.</text>
     <text x="20" y="214" class="small">The thesis's synthesis step: Synopsys Design Compiler on TSMC 28 nm reported area, timing at 450 MHz and power.</text>
@@ -401,29 +401,29 @@ td:first-child{font-weight:600;white-space:nowrap}
       </ul>
     </div>
   </div>
-  <figure class="diagram scroll"><svg viewBox="0 0 820 400" role="img" aria-label="A PC motherboard: the CPU package with its integrated GPU and media engine, DRAM, a chipset, and PCIe slots holding a GPU card with its own memory, an FPGA accelerator card, a capture card, an SSD and a network card; bandwidths are labelled.">
+  <figure class="diagram scroll"><svg viewBox="0 0 820 446" role="img" aria-label="A PC motherboard: DRAM beside the CPU package with its integrated GPU and media engine, a chipset below, and PCIe slots holding a GPU card with its own memory, an FPGA accelerator card, a capture card, an SSD and a network card; bandwidths are labelled.">
     <defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
-    <rect class="dash" x="10" y="10" width="800" height="380" rx="8"/><text x="22" y="30" class="small">MOTHERBOARD · one power supply, one cooling budget, one bus fabric</text>
-    <rect class="box cpu" x="60" y="60" width="240" height="120" rx="6"/><text x="180" y="84" text-anchor="middle" class="b">CPU package</text>
-    <rect class="box soft" x="76" y="98" width="100" height="30" rx="3"/><text x="126" y="117" text-anchor="middle" class="small">8–64 cores + L3</text>
-    <rect class="box soft" x="184" y="98" width="100" height="30" rx="3"/><text x="234" y="117" text-anchor="middle" class="small">integrated GPU</text>
-    <rect class="box asic" x="76" y="136" width="208" height="30" rx="3"/><text x="180" y="155" text-anchor="middle" class="small">media engine: H.264/HEVC/AV1 codec block (an ASIC block)</text>
-    <rect class="box" x="360" y="60" width="130" height="120" rx="6"/><text x="425" y="84" text-anchor="middle" class="b">DRAM</text><text x="425" y="104" text-anchor="middle" class="small">DDR5 modules</text><text x="425" y="122" text-anchor="middle" class="small">32–256 GB</text><text x="425" y="142" text-anchor="middle" class="small">the CPU's main memory</text>
-    <line class="arrow" x1="300" y1="120" x2="358" y2="120" marker-end="url(#ah5)" marker-start="url(#ah5)"/><text x="329" y="112" text-anchor="middle" class="small">~50–100 GB/s</text>
-    <rect class="box" x="60" y="220" width="240" height="50" rx="6"/><text x="180" y="241" text-anchor="middle" class="b">Chipset</text><text x="180" y="259" text-anchor="middle" class="small">additional PCIe lanes, USB, SATA, slower devices</text>
-    <line class="arrow" x1="180" y1="180" x2="180" y2="218" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="dash" x="10" y="10" width="800" height="426" rx="8"/><text x="22" y="30" class="small">MOTHERBOARD · one power supply, one cooling budget, one bus fabric</text>
+    <rect class="box" x="24" y="60" width="124" height="120" rx="6"/><text x="86" y="84" text-anchor="middle" class="b">DRAM</text><text x="86" y="104" text-anchor="middle" class="small">DDR5 modules</text><text x="86" y="122" text-anchor="middle" class="small">32–256 GB</text><text x="86" y="142" text-anchor="middle" class="small">the CPU's memory</text><text x="86" y="162" text-anchor="middle" class="small">~50–100 GB/s</text>
+    <line class="arrow" x1="148" y1="120" x2="168" y2="120" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="box cpu" x="170" y="60" width="250" height="120" rx="6"/><text x="295" y="84" text-anchor="middle" class="b">CPU package</text>
+    <rect class="box soft" x="186" y="98" width="112" height="30" rx="3"/><text x="242" y="117" text-anchor="middle" class="small">8–64 cores + L3</text>
+    <rect class="box soft" x="306" y="98" width="98" height="30" rx="3"/><text x="355" y="117" text-anchor="middle" class="small">integrated GPU</text>
+    <rect class="box asic" x="186" y="136" width="218" height="30" rx="3"/><text x="295" y="155" text-anchor="middle" class="small">media engine: codec ASIC block</text>
+    <rect class="box" x="170" y="220" width="250" height="50" rx="6"/><text x="295" y="241" text-anchor="middle" class="b">Chipset</text><text x="295" y="259" text-anchor="middle" class="small">more PCIe lanes, USB, SATA, slow devices</text>
+    <line class="arrow" x1="295" y1="180" x2="295" y2="218" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
     <rect class="box gpu" x="540" y="40" width="250" height="90" rx="6"/><text x="665" y="62" text-anchor="middle" class="b">GPU card (PCIe ×16 slot)</text><text x="665" y="82" text-anchor="middle" class="small">thousands of lanes · own 8–80 GB memory</text><text x="665" y="100" text-anchor="middle" class="small">0.5–3+ TB/s locally · 150–700 W</text><text x="665" y="118" text-anchor="middle" class="small">+ NVENC/NVDEC codec blocks</text>
-    <line class="arrow" x1="300" y1="90" x2="538" y2="68" marker-end="url(#ah5)" marker-start="url(#ah5)"/><text x="430" y="52" text-anchor="middle" class="small">PCIe 4.0 ×16 ≈ 32 GB/s each way</text>
-    <rect class="box fpga" x="540" y="150" width="250" height="70" rx="6"/><text x="665" y="172" text-anchor="middle" class="b">FPGA accelerator card (PCIe ×8/×16)</text><text x="665" y="192" text-anchor="middle" class="small">custom logic: networking, video, finance</text><text x="665" y="210" text-anchor="middle" class="small">deterministic latency · 25–225 W · own DRAM/HBM</text>
-    <line class="arrow" x1="300" y1="150" x2="538" y2="185" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
-    <rect class="box" x="540" y="240" width="250" height="56" rx="6"/><text x="665" y="262" text-anchor="middle" class="b">Capture card (PCIe ×4)</text><text x="665" y="282" text-anchor="middle" class="small">SDI / HDMI input, frames written to memory by DMA</text>
-    <line class="arrow" x1="300" y1="245" x2="538" y2="268" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <line class="arrow" x1="420" y1="90" x2="538" y2="70" marker-end="url(#ah5)" marker-start="url(#ah5)"/><text x="530" y="52" text-anchor="end" class="small">PCIe 4.0 ×16 ≈ 32 GB/s each way</text>
+    <rect class="box fpga" x="540" y="150" width="250" height="70" rx="6"/><text x="665" y="172" text-anchor="middle" class="b">FPGA accelerator card (PCIe ×8/×16)</text><text x="665" y="192" text-anchor="middle" class="small">custom logic: networking, video, finance</text><text x="665" y="210" text-anchor="middle" class="small">cycle-exact latency · 25–225 W · own memory</text>
+    <line class="arrow" x1="420" y1="150" x2="538" y2="185" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <rect class="box" x="540" y="240" width="250" height="56" rx="6"/><text x="665" y="262" text-anchor="middle" class="b">Capture card (PCIe ×4)</text><text x="665" y="282" text-anchor="middle" class="small">SDI / HDMI in, frames written by DMA</text>
+    <line class="arrow" x1="420" y1="245" x2="538" y2="268" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
     <rect class="box" x="540" y="316" width="118" height="46" rx="6"/><text x="599" y="336" text-anchor="middle" class="b">NVMe SSD</text><text x="599" y="352" text-anchor="middle" class="small">PCIe ×4, ~7 GB/s</text>
     <rect class="box" x="672" y="316" width="118" height="46" rx="6"/><text x="731" y="336" text-anchor="middle" class="b">Network card</text><text x="731" y="352" text-anchor="middle" class="small">10–100 Gb/s</text>
-    <line class="arrow" x1="300" y1="258" x2="538" y2="339" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
-    <text x="60" y="310" class="small">Encoding one frame on the GPU card: capture card → DMA → DRAM → PCIe → GPU memory → NVENC block →</text>
-    <text x="60" y="328" class="small">bitstream → PCIe → DRAM → network card. The CPU wrote four job descriptions and handled four interrupts.</text>
-    <text x="60" y="360" class="small b">Design rule: move data once, process it where it resides, submit work in large batches.</text>
+    <line class="arrow" x1="420" y1="258" x2="538" y2="339" marker-end="url(#ah5)" marker-start="url(#ah5)"/>
+    <text x="24" y="392" class="small">Encoding one frame on the GPU card: capture card → DMA → DRAM → PCIe → GPU memory → NVENC block →</text>
+    <text x="24" y="409" class="small">bitstream → PCIe → DRAM → network card. The CPU wrote four job descriptions and handled four interrupts.</text>
+    <text x="24" y="427" class="small b">Design rule: move data once, process it where it resides, submit work in large batches.</text>
   </svg><figcaption>A PC motherboard as a network of engines. The CPU package itself contains a GPU and a video codec block; the expansion cards add larger instances of the same platforms.</figcaption></figure>
   <div class="grid2">
     <div><figure class="diagram scroll" style="margin-top:0"><svg viewBox="0 0 520 300" role="img" aria-label="A phone system on chip: CPU cores, GPU, neural engine, image signal processor, video codec engine, display engine and modem connected by an on-chip network and sharing one LPDDR memory.">
@@ -432,24 +432,25 @@ td:first-child{font-weight:600;white-space:nowrap}
       <rect class="box gpu" x="190" y="50" width="140" height="60" rx="5"/><text x="260" y="74" text-anchor="middle" class="b">GPU</text><text x="260" y="92" text-anchor="middle" class="small">graphics, shaders</text>
       <rect class="box asic" x="350" y="50" width="140" height="60" rx="5"/><text x="420" y="74" text-anchor="middle" class="b">Neural engine</text><text x="420" y="92" text-anchor="middle" class="small">matrix arithmetic ASIC</text>
       <rect class="box soft" x="30" y="128" width="460" height="22" rx="3"/><text x="260" y="143" text-anchor="middle" class="small">network on chip: every block shares one memory</text>
-      <rect class="box asic" x="30" y="170" width="140" height="60" rx="5"/><text x="100" y="194" text-anchor="middle" class="b">Video engine</text><text x="100" y="212" text-anchor="middle" class="small">HEVC/AV1/VVC encode and decode</text>
+      <rect class="box asic" x="30" y="170" width="140" height="60" rx="5"/><text x="100" y="194" text-anchor="middle" class="b">Video engine</text><text x="100" y="212" text-anchor="middle" class="small">HEVC · AV1 · VVC codec</text>
       <rect class="box asic" x="190" y="170" width="140" height="60" rx="5"/><text x="260" y="194" text-anchor="middle" class="b">ISP · display</text><text x="260" y="212" text-anchor="middle" class="small">camera pipeline, screen</text>
       <rect class="box asic" x="350" y="170" width="140" height="60" rx="5"/><text x="420" y="194" text-anchor="middle" class="b">Modem · Wi-Fi</text><text x="420" y="212" text-anchor="middle" class="small">radio basebands</text>
       <rect class="box" x="30" y="248" width="460" height="30" rx="5"/><text x="260" y="268" text-anchor="middle" class="small">memory controller → LPDDR5 (shared by all blocks, ~50–100 GB/s)</text>
     </svg><figcaption>A system on chip. Most of the die area is ASIC blocks; the CPU cores occupy a minority of it. The video engine is the consumer form of the thesis's blocks.</figcaption></figure></div>
-    <div><figure class="diagram scroll" style="margin-top:0"><svg viewBox="0 0 520 300" role="img" aria-label="A professional encoder appliance: video input over SDI or HDMI, a codec ASIC performs the compression, a control SoC runs Linux, rate control and IP streaming, and the output leaves over Ethernet.">
+    <div><figure class="diagram scroll" style="margin-top:0"><svg viewBox="0 0 520 312" role="img" aria-label="A professional encoder appliance: video input over SDI or HDMI, a codec ASIC performs the compression, a control SoC runs Linux, rate control and IP streaming, and the output leaves over Ethernet.">
       <defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
-      <rect class="box" x="10" y="10" width="500" height="280" rx="10"/><text x="24" y="32" class="small">PROFESSIONAL ENCODER APPLIANCE · fanless · battery or Ethernet power</text>
-      <rect class="box soft" x="30" y="60" width="90" height="56" rx="5"/><text x="75" y="84" text-anchor="middle" class="b">Video in</text><text x="75" y="102" text-anchor="middle" class="small">SDI · HDMI</text>
-      <line class="arrow" x1="120" y1="88" x2="148" y2="88" marker-end="url(#ah6)"/>
-      <rect class="box asic" x="150" y="48" width="200" height="80" rx="5"/><text x="250" y="72" text-anchor="middle" class="b">Codec ASIC</text><text x="250" y="90" text-anchor="middle" class="small">AVC · HEVC · VVC, encode and decode</text><text x="250" y="108" text-anchor="middle" class="small">transform, ALF, prediction, at 450 MHz</text>
-      <rect class="box" x="370" y="60" width="120" height="56" rx="5"/><text x="430" y="84" text-anchor="middle" class="b">DRAM</text><text x="430" y="102" text-anchor="middle" class="small">reference pictures</text>
-      <line class="arrow" x1="350" y1="88" x2="368" y2="88" marker-end="url(#ah6)" marker-start="url(#ah6)"/>
+      <rect class="box" x="10" y="10" width="500" height="292" rx="10"/><text x="24" y="32" class="small">PROFESSIONAL ENCODER APPLIANCE · fanless · battery or Ethernet power</text>
+      <rect class="box soft" x="24" y="60" width="84" height="56" rx="5"/><text x="66" y="84" text-anchor="middle" class="b">Video in</text><text x="66" y="102" text-anchor="middle" class="small">SDI · HDMI</text>
+      <line class="arrow" x1="108" y1="88" x2="128" y2="88" marker-end="url(#ah6)"/>
+      <rect class="box asic" x="130" y="48" width="240" height="80" rx="5"/><text x="250" y="72" text-anchor="middle" class="b">Codec ASIC</text><text x="250" y="90" text-anchor="middle" class="small">AVC · HEVC · VVC, encode and decode</text><text x="250" y="108" text-anchor="middle" class="small">transform, ALF, prediction · 450 MHz</text>
+      <rect class="box" x="392" y="60" width="104" height="56" rx="5"/><text x="444" y="84" text-anchor="middle" class="b">DRAM</text><text x="444" y="102" text-anchor="middle" class="small">reference pictures</text>
+      <line class="arrow" x1="370" y1="88" x2="390" y2="88" marker-end="url(#ah6)" marker-start="url(#ah6)"/>
       <line class="arrow" x1="250" y1="128" x2="250" y2="168" marker-end="url(#ah6)" marker-start="url(#ah6)"/><text x="262" y="152" class="small">bitstream, parameters, statistics</text>
-      <rect class="box cpu" x="150" y="170" width="200" height="80" rx="5"/><text x="250" y="194" text-anchor="middle" class="b">Control SoC (ARM CPU)</text><text x="250" y="212" text-anchor="middle" class="small">Linux, web interface, rate control, encryption,</text><text x="250" y="230" text-anchor="middle" class="small">IP streaming (RTP, SRT, transport streams)</text>
-      <line class="arrow" x1="350" y1="210" x2="398" y2="210" marker-end="url(#ah6)"/>
-      <rect class="box soft" x="400" y="182" width="90" height="56" rx="5"/><text x="445" y="206" text-anchor="middle" class="b">Network</text><text x="445" y="224" text-anchor="middle" class="small">Ethernet out</text>
-      <text x="30" y="272" class="small">Pixel processing on the ASIC (billions of operations per second at a few watts); decisions and packets on the CPU.</text>
+      <rect class="box cpu" x="130" y="170" width="240" height="80" rx="5"/><text x="250" y="194" text-anchor="middle" class="b">Control SoC (ARM CPU)</text><text x="250" y="212" text-anchor="middle" class="small">Linux, web UI, rate control, encryption</text><text x="250" y="230" text-anchor="middle" class="small">IP streaming: RTP, SRT, transport streams</text>
+      <line class="arrow" x1="370" y1="210" x2="400" y2="210" marker-end="url(#ah6)"/>
+      <rect class="box soft" x="402" y="182" width="94" height="56" rx="5"/><text x="449" y="206" text-anchor="middle" class="b">Network</text><text x="449" y="224" text-anchor="middle" class="small">Ethernet out</text>
+      <text x="24" y="272" class="small">Pixel processing on the ASIC: billions of operations per second at a few watts.</text>
+      <text x="24" y="288" class="small">Decisions and packets on the CPU.</text>
     </svg><figcaption>Where the thesis's blocks are used: in the codec ASIC of an appliance of this kind. The CPU beside it selects the ALF filter-set candidates and the quantisation; the ASIC performs the arithmetic.</figcaption></figure></div>
   </div>
   <div class="remember"><span class="k">Summary</span><ol><li>The CPU is the host; every other platform is a device that it controls through a bus.</li><li>Data movement, not arithmetic, sets the limits: move data once, process it in place, batch the work.</li><li>A system on chip is a motherboard on one die; a modern CPU package is already a small SoC with codec ASIC blocks.</li></ol></div>
@@ -534,8 +535,8 @@ td:first-child{font-weight:600;white-space:nowrap}
       const x = left + span * (e - lo) / (hi - lo);
       s += '<line class="grid" x1="' + x + '" y1="' + (ay - 4) + '" x2="' + x + '" y2="' + ay + '"/><text x="' + x + '" y="' + (ay + 12) + '" text-anchor="middle" class="small">' + fmt(Math.pow(10, e)) + '</text>';
     }
-    s += '<text x="' + (W - right + 90) + '" y="' + (ay + 12) + '" text-anchor="end" class="small">' + esc(opt.unit) + ', logarithmic scale</text></svg>';
-    el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">' + esc(opt.title) + '</div>' + s;
+    s += '</svg>';
+    el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">' + esc(opt.title) + ' (' + esc(opt.unit) + ', logarithmic scale)</div>' + s;
   }
   logBars(document.getElementById('energyChart'), [
     {label: '32-bit integer addition', value: 0.1},
@@ -569,8 +570,8 @@ td:first-child{font-weight:600;white-space:nowrap}
     s += '<polyline class="line-fpga" points="' + X(0) + ',' + Y(fpga(0)) + ' ' + X(xmax) + ',' + Y(fpga(xmax)) + '"/>';
     s += '<polyline class="line-asic" points="' + X(0) + ',' + Y(asic(0)) + ' ' + X(xmax) + ',' + Y(asic(xmax)) + '"/>';
     s += '<text x="' + (X(21000) - 6) + '" y="' + (Y(fpga(21000)) - 8) + '" text-anchor="end" class="lbl">FPGA: $300 per unit</text>';
-    s += '<text x="' + (X(16000)) + '" y="' + (Y(asic(16000)) - 8) + '" text-anchor="middle" class="lbl">ASIC: $3M once + $15 per unit</text>';
-    s += '<circle class="ring" cx="' + X(be) + '" cy="' + Y(fpga(be)) + '" r="7" style="fill:var(--fg)"/><text x="' + (X(be) + 12) + '" y="' + (Y(fpga(be)) + 4) + '" class="val">break-even ≈ ' + fmt(Math.round(be / 100) * 100) + ' units</text>';
+    s += '<text x="' + (X(24500)) + '" y="' + (Y(asic(24500)) - 10) + '" text-anchor="end" class="lbl">ASIC: $3M once + $15 per unit</text>';
+    s += '<circle class="ring" cx="' + X(be) + '" cy="' + Y(fpga(be)) + '" r="7" style="fill:var(--fg)"/><text x="' + (X(be) + 12) + '" y="' + (Y(fpga(be)) + 22) + '" class="val">break-even ≈ ' + fmt(Math.round(be / 100) * 100) + ' units</text>';
     s += '</svg>';
     el.innerHTML = '<div class="eyebrow" style="margin-bottom:6px">Total cost against volume (illustrative values)</div>' + s;
   })();
@@ -583,7 +584,7 @@ td:first-child{font-weight:600;white-space:nowrap}
   })();
   (function(){
     const g = document.getElementById('fpgaGrid'); let s = '';
-    s += '<rect class="dash" x="10" y="10" width="740" height="300" rx="8"/><text x="22" y="30" class="small">FPGA DIE · input/output blocks and transceivers at the edge · configuration memory holds the bitstream</text>';
+    s += '<rect class="dash" x="10" y="10" width="740" height="342" rx="8"/><text x="22" y="30" class="small">FPGA DIE · input/output blocks and transceivers at the edge · configuration memory holds the bitstream</text>';
     const cols = 9, rows = 4, x0 = 40, y0 = 50, cw = 62, ch = 50, gap = 12;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const x = x0 + c * (cw + gap), y = y0 + r * (ch + gap);
@@ -593,8 +594,10 @@ td:first-child{font-weight:600;white-space:nowrap}
     }
     for (let c = 0; c < cols - 1; c++) { const x = x0 + c * (cw + gap) + cw + gap / 2; s += '<line class="lane" x1="' + x + '" y1="' + (y0 - 6) + '" x2="' + x + '" y2="' + (y0 + rows * (ch + gap) - gap + 6) + '"/>'; }
     for (let r = 0; r < rows - 1; r++) { const y = y0 + r * (ch + gap) + ch + gap / 2; s += '<line class="lane" x1="' + (x0 - 6) + '" y1="' + y + '" x2="' + (x0 + cols * (cw + gap) - gap + 6) + '" y2="' + y + '"/>'; }
-    s += '<text x="40" y="' + (y0 + rows * (ch + gap) + 14) + '" class="small">lines: programmable routing with a switch at every crossing · a 6-input LUT stores a 64-entry truth table and implements any logic function of 6 inputs</text>';
-    s += '<text x="40" y="' + (y0 + rows * (ch + gap) + 32) + '" class="small">design flow: VHDL/Verilog → synthesis → placement and routing → bitstream (minutes to hours) · all blocks operate in the same clock cycle</text>';
+    const ty = y0 + rows * (ch + gap);
+    s += '<text x="40" y="' + (ty + 14) + '" class="small">lines: programmable routing with a switch at every crossing · all blocks operate in the same clock cycle</text>';
+    s += '<text x="40" y="' + (ty + 31) + '" class="small">a 6-input LUT stores a 64-entry truth table and implements any logic function of 6 inputs</text>';
+    s += '<text x="40" y="' + (ty + 48) + '" class="small">design flow: VHDL/Verilog → synthesis → placement and routing → bitstream (minutes to hours)</text>';
     g.innerHTML = s;
   })();
 
